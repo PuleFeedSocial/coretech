@@ -1,0 +1,127 @@
+/* VARIABLES DE DISEÑO & CONFIGURACIÓN GLOBAL */
+:root {
+    --bg-main: #0a0c10;
+    --bg-secondary: #12161f;
+    --text-primary: 'Plus Jakarta Sans', sans-serif;
+    --accent-color: #7c3aed;
+    /* Morado elegante elegante (Purple 600) */
+    --accent-hover: #9333ea;
+    /* Morado para hover */
+    --border-color: #262c36;
+    --text-muted: #8b949e;
+}
+
+body {
+    background-color: var(--bg-main);
+    font-family: var(--text-primary);
+    color: #f0f6fc;
+}
+
+.font-monospace {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+.text-accent {
+    color: var(--accent-color) !important;
+}
+
+.text-muted-custom {
+    color: var(--text-muted);
+}
+
+.max-w-600 {
+    max-width: 600px;
+}
+
+/* COMPONENTES ESPECÍFICOS */
+.bg-dark-custom {
+    background-color: var(--bg-main) !important;
+}
+
+.bg-dark-secondary {
+    background-color: var(--bg-secondary) !important;
+}
+
+.border-secondary-custom {
+    border-color: var(--border-color) !important;
+}
+
+/* BOTONES PERSONALIZADOS */
+.btn-accent {
+    background-color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.btn-accent:hover {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: #fff !important;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.45);
+}
+
+.btn-outline-accent {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-accent:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff !important;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.45);
+}
+
+.btn-outline-secondary-custom {
+    border-color: var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary-custom:hover {
+    background-color: #1c212c;
+    border-color: #3e4756;
+}
+
+/* HERO & SECCIONES */
+.hero-section {
+    min-height: 80vh;
+    background-color: var(--bg-main);
+    padding: 60px 0;
+}
+
+.tech-card {
+    background-color: rgba(18, 22, 31, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+/* CARDS INTERACTIVAS */
+.feature-card,
+.access-card {
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 5px 15px rgba(124, 58, 237, 0.1);
+}
+
+.access-card:hover {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* EFECTO DE RESPLANDOR MORADO (GLOW EFFECT) */
+.glow-effect {
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    top: -100px;
+    right: -100px;
+}
