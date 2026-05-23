@@ -76,6 +76,13 @@ app.get('/debug', async (req, res) => {
 
 app.get('/api/seed', async (req, res) => {
   try {
+    if (req.query.force === 'true') {
+      const db = await getDb();
+      await db.run('DELETE FROM user_projects');
+      await db.run('DELETE FROM projects');
+      await db.run('DELETE FROM activation_codes');
+      await db.run('DELETE FROM users');
+    }
     await runSeed();
     res.json({ message: 'Seed ejecutado correctamente.' });
   } catch (err) {
