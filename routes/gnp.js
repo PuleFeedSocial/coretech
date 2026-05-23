@@ -79,6 +79,47 @@ async function tieneAcceso(userId) {
   return false;
 }
 
+router.get('/diagnostico', async (req, res) => {
+  try {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) return res.status(401).json({ error: 'Token requerido' });
+    const decoded = require('jsonwebtoken').verify(header.split(' ')[1], process.env.JWT_SECRET);
+    const db = await getDb();
+    const user = await db.get('SELECT role FROM users WHERE id = ?', [decoded.id]);
+    if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
+    await conectar().catch(() => {});
+    const result = {
+      discordTokenConfigurado: !!DISCORD_TOKEN,
+      discordTokenLength: DISCORD_TOKEN ? DISCORD_TOKEN.length : 0,
+      warming,
+      usuariosEnCache: 0
+    };
+    try { result.usuariosEnCache = await DiscordUser.countDocuments({}); } catch {}
+    if (DISCORD_TOKEN) {
+      try {
+        const test = await fetch('https://discord.com/api/v10/users/@me', {
+          headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+        });
+        result.tokenValido = test.ok;
+        result.statusCode = test.status;
+        if (test.ok) {
+          const data = await test.json();
+          result.botName = data.username;
+        } else {
+          const err = await test.json().catch(() => ({}));
+          result.errorDiscord = err;
+        }
+      } catch (e) {
+        result.tokenValido = false;
+        result.errorRed = e.message;
+      }
+    }
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.use(authenticate);
 router.use(async (req, res, next) => {
   const acceso = await tieneAcceso(req.user.id);
@@ -244,38 +285,6 @@ router.delete('/nombres/:userId', async (req, res) => {
   if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
   await DiscordUser.deleteOne({ userId: req.params.userId });
   res.json({ message: 'Nombre eliminado' });
-});
-
-router.get('/diagnostico', async (req, res) => {
-  const db = await getDb();
-  const user = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
-  if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
-  const result = {
-    discordTokenConfigurado: !!DISCORD_TOKEN,
-    discordTokenLength: DISCORD_TOKEN ? DISCORD_TOKEN.length : 0,
-    warming,
-    usuariosEnCache: await DiscordUser.countDocuments({})
-  };
-  if (DISCORD_TOKEN) {
-    try {
-      const test = await fetch('https://discord.com/api/v10/users/@me', {
-        headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
-      });
-      result.tokenValido = test.ok;
-      result.statusCode = test.status;
-      if (test.ok) {
-        const data = await test.json();
-        result.botName = data.username;
-      } else {
-        const err = await test.json().catch(() => ({}));
-        result.errorDiscord = err;
-      }
-    } catch (e) {
-      result.tokenValido = false;
-      result.errorRed = e.message;
-    }
-  }
-  res.json(result);
 });
 
 module.exports = router;
