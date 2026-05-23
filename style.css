@@ -905,6 +905,37 @@ body {
 }
 
 /* ==========================================================================
+   DROPDOWN DE NAVEGACIÓN (Perfil de usuario)
+   ========================================================================== */
+
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item {
+    color: #e0e0e0 !important;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    transition: background 0.2s ease;
+}
+
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item:hover,
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff !important;
+}
+
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item.text-danger {
+    color: #f87171 !important;
+}
+
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item.text-danger:hover {
+    background-color: rgba(248, 113, 113, 0.12);
+    color: #ff6b6b !important;
+}
+
+.navbar.bg-dark-custom .dropdown-menu .dropdown-item-text.text-muted-custom {
+    color: #9ca3af !important;
+    font-size: 0.75rem;
+}
+
+/* ==========================================================================
    MEDIA QUERIES - OPTIMIZACIÓN RESPONSIVE (Móviles y Tablets)
    ========================================================================== */
 
