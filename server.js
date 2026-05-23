@@ -6,6 +6,7 @@ const path = require('path');
 const getDb = require('./database');
 
 const bcrypt = require('bcryptjs');
+const { conectar: conectarMongo } = require('./gnp-db');
 
 const authRoutes = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
@@ -74,19 +75,15 @@ app.get('/debug', async (req, res) => {
     let mongoInfo = null;
     if (mongoUriSet) {
       try {
-        const mongoose = require('mongoose');
-        const conn = mongoose.connection;
-        if (conn && conn.readyState === 1) {
-          const collections = await conn.db.listCollections().toArray();
-          const info = [];
-          for (const col of collections) {
-            const count = await conn.db.collection(col.name).countDocuments();
-            info.push({ nombre: col.name, documentos: count });
-          }
-          mongoInfo = { baseDeDatos: conn.db.databaseName, colecciones: info };
-        } else {
-          mongoInfo = { conectado: false, estado: conn?.readyState };
+        await conectarMongo();
+        const conn = require('mongoose').connection;
+        const collections = await conn.db.listCollections().toArray();
+        const info = [];
+        for (const col of collections) {
+          const count = await conn.db.collection(col.name).countDocuments();
+          info.push({ nombre: col.name, documentos: count });
         }
+        mongoInfo = { baseDeDatos: conn.db.databaseName, colecciones: info };
       } catch (e) {
         mongoInfo = { error: e.message };
       }
