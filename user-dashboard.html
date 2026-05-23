@@ -92,6 +92,13 @@
                             <p>Ir a la página principal</p>
                         </a>
                     </div>
+                    <div class="col-6 col-md-4" id="gnpLink" style="display:none;">
+                        <a href="gnp-dashboard.html" class="quick-card" style="border-color:var(--accent-color);">
+                            <div class="icon">🎖️</div>
+                            <h6>Dashboard GNP</h6>
+                            <p>Panel de la Guardia Nacional</p>
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -135,6 +142,9 @@
                 if (!projects.length) {
                     container.innerHTML = '<div class="col-12 text-center text-muted-custom py-4 font-monospace">No tienes proyectos asignados aún. El administrador te asignará proyectos.</div>';
                     return;
+                }
+                if (projects.some(p => p.title.toLowerCase().includes('guardia'))) {
+                    document.getElementById('gnpLink').style.display = 'block';
                 }
                 document.getElementById('userStatProjects').textContent = projects.length;
                 container.innerHTML = projects.map(p => {

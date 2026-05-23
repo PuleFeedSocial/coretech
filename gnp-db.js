@@ -1,0 +1,34 @@
+const mongoose = require('mongoose');
+
+let connected = false;
+
+const GnpSchema = new mongoose.Schema({ key: { type: String, unique: true }, valor: mongoose.Schema.Types.Mixed });
+const DataGNP = mongoose.model('DataGNP', GnpSchema);
+
+const AsistenciaSchema = new mongoose.Schema({
+  userId: String, cuartel: String, horaEntrada: String, horaSalida: String,
+  h50Momento: String, fechaString: String, timestamp: { type: Date, default: Date.now }
+});
+const AsistenciaGNP = mongoose.model('AsistenciaGNP', AsistenciaSchema);
+
+const H50Schema = new mongoose.Schema({
+  userId: String, cuartel: String, minutos: Number, emisor: String,
+  relegado: String, fechaString: String, timestamp: { type: Date, default: Date.now }
+});
+const H50GNP = mongoose.model('H50GNP', H50Schema);
+
+const PerfilSchema = new mongoose.Schema({ userId: { type: String, unique: true }, ultimoAscenso: { type: Date, default: 0 } });
+const PerfilGNP = mongoose.model('PerfilGNP', PerfilSchema);
+
+const AusenciaSchema = new mongoose.Schema({ userId: { type: String, unique: true }, fechaFin: Date, motivo: String });
+const AusenciaGNP = mongoose.model('AusenciaGNP', AusenciaSchema);
+
+async function conectar() {
+  if (connected) return;
+  const uri = process.env.MONGO_URI;
+  if (!uri) throw new Error('MONGO_URI no configurada');
+  await mongoose.connect(uri);
+  connected = true;
+}
+
+module.exports = { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP };

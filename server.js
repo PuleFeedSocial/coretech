@@ -12,6 +12,7 @@ const projectRoutes = require('./routes/projects');
 const uploadRoutes = require('./routes/upload');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
+const gnpRoutes = require('./routes/gnp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/gnp', gnpRoutes);
 
 async function runSeed() {
   const db = await getDb();

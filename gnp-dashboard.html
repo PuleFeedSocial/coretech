@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTech Systems - GNP Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
+        <div class="container">
+            <a class="navbar-brand font-monospace fw-bold text-accent" href="index.html">
+                <span class="text-white">&lt;</span>CORETECH<span class="text-white">_SYSTEMS&gt;</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav text-center pt-3 pt-lg-0"></ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="dash-section py-4">
+        <div class="container py-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <div class="font-monospace text-accent mb-1 fs-7">[ GNP_DASHBOARD ]</div>
+                    <h2 class="text-white fw-bold mb-0 fs-3">Guardia Nacional Premium</h2>
+                </div>
+                <span class="text-muted-custom font-monospace fs-7" id="currentUserDisplay"></span>
+            </div>
+
+            <div class="row g-3 mb-4" id="statsRow"></div>
+
+            <div class="mb-4">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <input type="text" class="form-control form-control-custom" id="searchUserId" placeholder="Buscar por ID de Discord" style="max-width:300px;">
+                    <input type="date" class="form-control form-control-custom" id="filterDesde" style="max-width:180px;">
+                    <input type="date" class="form-control form-control-custom" id="filterHasta" style="max-width:180px;">
+                    <button class="btn btn-accent px-3 py-1 fw-bold text-white" onclick="aplicarFiltros()">Filtrar</button>
+                    <button class="btn btn-outline-secondary-custom px-3 py-1 text-white" onclick="limpiarFiltros()">Limpiar</button>
+                </div>
+            </div>
+
+            <div class="mb-3 d-flex gap-2 border-bottom border-secondary-custom pb-2">
+                <button class="tab-btn active" onclick="switchTab('cuarteles', this)">🏛️ Cuarteles</button>
+                <button class="tab-btn" onclick="switchTab('asistencias', this)">📝 Asistencias</button>
+                <button class="tab-btn" onclick="switchTab('h50', this)">⏱️ H50</button>
+                <button class="tab-btn" onclick="switchTab('ausencias', this)">✈️ Ausencias</button>
+            </div>
+
+            <div class="tab-content-custom active" id="tabCuarteles">
+                <div class="row g-3" id="cuartelesGrid"></div>
+            </div>
+
+            <div class="tab-content-custom" id="tabAsistencias">
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead><tr><th>Discord ID</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th></tr></thead>
+                        <tbody id="asistenciasBody"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="text-muted-custom font-monospace fs-7" id="asistenciasInfo"></span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', -1)">◀ Anterior</button>
+                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', 1)">Siguiente ▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content-custom" id="tabH50">
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead><tr><th>Discord ID</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th></tr></thead>
+                        <tbody id="h50Body"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="text-muted-custom font-monospace fs-7" id="h50Info"></span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('h50', -1)">◀ Anterior</button>
+                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('h50', 1)">Siguiente ▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content-custom" id="tabAusencias">
+                <div class="mb-2">
+                    <label class="form-check-label text-muted-custom font-monospace fs-7">
+                        <input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()">
+                        Mostrar solo ausencias activas
+                    </label>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead><tr><th>Discord ID</th><th>Fecha fin</th><th>Motivo</th></tr></thead>
+                        <tbody id="ausenciasBody"><tr><td colspan="3" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Modal Detalle de Miembro -->
+    <div class="modal fade" id="memberModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace" id="memberModalTitle">Detalle del miembro</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="memberModalBody">
+                    <div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>
+                </div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
+        <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+        let paginas = { asistencias: 1, h50: 1 };
+
+        function checkAuth() {
+            const user = getUser();
+            if (!user) window.location.href = 'login.html';
+            document.getElementById('currentUserDisplay').textContent = '👤 ' + (user ? user.name : '');
+        }
+
+        async function cargarCuarteles() {
+            try {
+                const res = await fetch(API + '/api/gnp/cuarteles', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if (res.status === 403) { window.location.href = 'dashboard.html'; return; }
+                if (res.status === 503) {
+                    document.getElementById('cuartelesGrid').innerHTML =
+                        '<div class="col-12 text-center text-muted-custom py-5 font-monospace">⚠️ MongoDB no configurado. Contacta al administrador.</div>';
+                    return;
+                }
+                const cuarteles = await res.json();
+                const grid = document.getElementById('cuartelesGrid');
+                if (!cuarteles.length) {
+                    grid.innerHTML = '<div class="col-12 text-center text-muted-custom py-5 font-monospace">No hay cuarteles registrados.</div>';
+                    return;
+                }
+                grid.innerHTML = cuarteles.map(c => `
+                    <div class="col-xl-4 col-md-6 col-12">
+                        <div class="stat-card" onclick="toggleCuartel('${c.nombre}')" style="cursor:pointer;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="stat-number">${c.cantidad}</div>
+                                    <div class="stat-label" style="font-size:1rem;text-transform:none;letter-spacing:0;">${c.nombre.toUpperCase()}</div>
+                                </div>
+                                <span class="stat-icon">🏛️</span>
+                            </div>
+                            <div id="miembros_${c.nombre}" style="display:none;" class="mt-3 pt-3 border-top border-secondary-custom">
+                                ${c.miembros.length
+                                    ? c.miembros.map(id => `<div class="d-flex justify-content-between align-items-center py-1">
+                                        <span class="font-monospace fs-7 text-muted-custom">${id}</span>
+                                        <button class="btn-sm-icon" onclick="event.stopPropagation();verMiembro('${id}')">👤</button>
+                                    </div>`).join('')
+                                    : '<span class="text-muted-custom fs-7 font-monospace">Sin personal asignado</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('statsRow').innerHTML = `
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card"><div class="stat-number">${cuarteles.length}</div><div class="stat-label">Cuarteles</div></div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card"><div class="stat-number">${cuarteles.reduce((a, c) => a + c.cantidad, 0)}</div><div class="stat-label">Efectivos</div></div>
+                    </div>
+                `;
+            } catch {
+                document.getElementById('cuartelesGrid').innerHTML =
+                    '<div class="col-12 text-center text-muted-custom py-5 font-monospace">Error al cargar cuarteles.</div>';
+            }
+        }
+
+        function toggleCuartel(nombre) {
+            const div = document.getElementById('miembros_' + nombre);
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function verMiembro(userId) {
+            const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+            document.getElementById('memberModalTitle').textContent = 'Detalle: ' + userId;
+            document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>';
+            modal.show();
+
+            try {
+                const [infoRes, asisRes, h50Res] = await Promise.all([
+                    fetch(API + '/api/gnp/miembros/' + userId, { headers: { 'Authorization': 'Bearer ' + getToken() } }),
+                    fetch(API + '/api/gnp/asistencias?userId=' + userId + '&limit=10', { headers: { 'Authorization': 'Bearer ' + getToken() } }),
+                    fetch(API + '/api/gnp/h50?userId=' + userId + '&limit=10', { headers: { 'Authorization': 'Bearer ' + getToken() } })
+                ]);
+                const info = await infoRes.json();
+                const asis = await asisRes.json();
+                const h50 = await h50Res.json();
+
+                const totalMins = h50.data.reduce((a, c) => a + c.minutos, 0);
+                const ausenciaHtml = info.ausencia
+                    ? `<div class="info-row"><span class="info-label">Ausencia</span><span class="info-value">${info.ausencia.motivo} (hasta ${new Date(info.ausencia.fechaFin).toLocaleDateString()})</span></div>`
+                    : '';
+
+                document.getElementById('memberModalBody').innerHTML = `
+                    <div class="settings-card p-3 mb-3">
+                        <div class="info-row"><span class="info-label">Discord ID</span><span class="info-value font-monospace">${info.userId}</span></div>
+                        <div class="info-row"><span class="info-label">Cuartel</span><span class="info-value">${info.cuartel ? info.cuartel.toUpperCase() : 'Sin asignar'}</span></div>
+                        <div class="info-row"><span class="info-label">Último ascenso</span><span class="info-value">${info.ultimoAscenso ? new Date(info.ultimoAscenso).toLocaleDateString() : 'Sin registro'}</span></div>
+                        ${ausenciaHtml}
+                    </div>
+                    <h6 class="section-title mb-2 fs-7">Últimas asistencias (${asis.total})</h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-custom mb-0 fs-7">
+                            <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>H50</th></tr></thead>
+                            <tbody>${asis.data.length ? asis.data.map(a => `<tr><td>${a.fechaString}</td><td>${a.horaEntrada}</td><td>${a.horaSalida}</td><td>${a.h50Momento}</td></tr>`).join('') : '<tr><td colspan="4" class="text-muted-custom">Sin registros</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                    <h6 class="section-title mb-2 fs-7">Últimos H50 (${h50.total}) — Total: ${Math.floor(totalMins/60)}h ${totalMins%60}m</h6>
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0 fs-7">
+                            <thead><tr><th>Fecha</th><th>Tiempo</th><th>Emisor</th><th>Relegado</th></tr></thead>
+                            <tbody>${h50.data.length ? h50.data.map(x => `<tr><td>${x.fechaString}</td><td>${Math.floor(x.minutos/60)}h ${x.minutos%60}m</td><td>${x.emisor}</td><td>${x.relegado}</td></tr>`).join('') : '<tr><td colspan="4" class="text-muted-custom">Sin registros</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                `;
+            } catch {
+                document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Error al cargar datos.</div>';
+            }
+        }
+
+        function getFiltros() {
+            return {
+                userId: document.getElementById('searchUserId').value.trim(),
+                desde: document.getElementById('filterDesde').value,
+                hasta: document.getElementById('filterHasta').value
+            };
+        }
+
+        async function cargarAsistencias() {
+            const f = getFiltros();
+            const params = new URLSearchParams();
+            if (f.userId) params.set('userId', f.userId);
+            if (f.desde) params.set('desde', f.desde);
+            if (f.hasta) params.set('hasta', f.hasta);
+            params.set('page', paginas.asistencias);
+
+            try {
+                const res = await fetch(API + '/api/gnp/asistencias?' + params, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const d = await res.json();
+                const tbody = document.getElementById('asistenciasBody');
+                if (!d.data.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
+                } else {
+                    tbody.innerHTML = d.data.map(a => `<tr>
+                        <td class="font-monospace">${a.userId}</td>
+                        <td>${a.cuartel.toUpperCase()}</td>
+                        <td>${a.horaEntrada}</td><td>${a.horaSalida}</td>
+                        <td>${a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
+                    </tr>`).join('');
+                }
+                const totalPag = Math.ceil(d.total / d.limit);
+                document.getElementById('asistenciasInfo').textContent = `Página ${d.page} de ${totalPag} (${d.total} registros)`;
+            } catch {
+                document.getElementById('asistenciasBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+            }
+        }
+
+        async function cargarH50() {
+            const f = getFiltros();
+            const params = new URLSearchParams();
+            if (f.userId) params.set('userId', f.userId);
+            if (f.desde) params.set('desde', f.desde);
+            if (f.hasta) params.set('hasta', f.hasta);
+            params.set('page', paginas.h50);
+
+            try {
+                const res = await fetch(API + '/api/gnp/h50?' + params, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const d = await res.json();
+                const tbody = document.getElementById('h50Body');
+                if (!d.data.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
+                } else {
+                    tbody.innerHTML = d.data.map(x => `<tr>
+                        <td class="font-monospace">${x.userId}</td>
+                        <td>${x.cuartel.toUpperCase()}</td>
+                        <td>${Math.floor(x.minutos/60)}h ${x.minutos%60}m</td>
+                        <td>${x.emisor}</td><td>${x.relegado}</td>
+                        <td class="font-monospace">${x.fechaString}</td>
+                    </tr>`).join('');
+                }
+                const totalPag = Math.ceil(d.total / d.limit);
+                document.getElementById('h50Info').textContent = `Página ${d.page} de ${totalPag} (${d.total} registros)`;
+            } catch {
+                document.getElementById('h50Body').innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+            }
+        }
+
+        async function cargarAusencias() {
+            const activas = document.getElementById('ausenciasActivas').checked;
+            try {
+                const res = await fetch(API + '/api/gnp/ausencias?activas=' + activas, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const docs = await res.json();
+                const tbody = document.getElementById('ausenciasBody');
+                if (!docs.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">Sin ausencias</td></tr>';
+                } else {
+                    tbody.innerHTML = docs.map(a => `<tr>
+                        <td class="font-monospace">${a.userId}</td>
+                        <td class="font-monospace">${new Date(a.fechaFin).toLocaleDateString()}</td>
+                        <td>${a.motivo}</td>
+                    </tr>`).join('');
+                }
+            } catch {
+                document.getElementById('ausenciasBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+            }
+        }
+
+        function aplicarFiltros() {
+            paginas.asistencias = 1;
+            paginas.h50 = 1;
+            const t = document.querySelector('.tab-btn.active');
+            const tab = t ? t.textContent.trim() : 'Cuarteles';
+            if (tab.includes('Asistencias')) cargarAsistencias();
+            if (tab.includes('H50')) cargarH50();
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('searchUserId').value = '';
+            document.getElementById('filterDesde').value = '';
+            document.getElementById('filterHasta').value = '';
+            aplicarFiltros();
+        }
+
+        function cambiarPagina(tab, dir) {
+            paginas[tab] = Math.max(1, paginas[tab] + dir);
+            if (tab === 'asistencias') cargarAsistencias();
+            if (tab === 'h50') cargarH50();
+        }
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-content-custom').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const map = { cuarteles: 'tabCuarteles', asistencias: 'tabAsistencias', h50: 'tabH50', ausencias: 'tabAusencias' };
+            document.getElementById(map[tab]).classList.add('active');
+            btn.classList.add('active');
+            if (tab === 'cuarteles') cargarCuarteles();
+            if (tab === 'asistencias') cargarAsistencias();
+            if (tab === 'h50') cargarH50();
+            if (tab === 'ausencias') cargarAusencias();
+        }
+
+        checkAuth();
+        cargarCuarteles();
+    </script>
+</body>
+</html>
