@@ -105,8 +105,18 @@ function createDropdownItem(icon, text, href) {
   return li;
 }
 
+function injectDiscordButton() {
+  const existing = document.getElementById('discordFloatingBtn');
+  if (existing) return;
+  const div = document.createElement('div');
+  div.id = 'discordFloatingBtn';
+  div.innerHTML = '<a href="https://discord.gg/e7m2uE2P5" target="_blank" rel="noopener" class="discord-float" title="Soporte CoreTech">💬</a>';
+  document.body.appendChild(div);
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateNavbar);
+  document.addEventListener('DOMContentLoaded', () => { updateNavbar(); injectDiscordButton(); });
 } else {
   updateNavbar();
+  injectDiscordButton();
 }
