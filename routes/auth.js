@@ -24,21 +24,21 @@ router.post('/register', async (req, res) => {
 
     const db = await getDb();
 
-    const existingUser = db.get('SELECT id FROM users WHERE email = ?', [email]);
+    const existingUser = await db.get('SELECT id FROM users WHERE email = ?', [email]);
     if (existingUser) {
       return res.status(409).json({ error: 'El email ya está registrado.' });
     }
 
-    const code = db.get('SELECT id FROM activation_codes WHERE code = ? AND used = 0', [activationCode]);
+    const code = await db.get('SELECT id FROM activation_codes WHERE code = ? AND used = 0', [activationCode]);
     if (!code) {
       return res.status(400).json({ error: 'Código de activación inválido o ya utilizado.' });
     }
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-    db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, 'user']);
+    await db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', [name, email, hashedPassword, 'user']);
 
-    const user = db.get('SELECT id FROM users WHERE email = ?', [email]);
-    db.run('UPDATE activation_codes SET used = 1, used_by = ? WHERE id = ?', [user.id, code.id]);
+    const user = await db.get('SELECT id FROM users WHERE email = ?', [email]);
+    await db.run('UPDATE activation_codes SET used = 1, used_by = ? WHERE id = ?', [user.id, code.id]);
 
     const token = jwt.sign({ id: user.id, name, email, role: 'user' }, SECRET, { expiresIn: '7d' });
 
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
     }
 
     const db = await getDb();
-    const user = db.get('SELECT * FROM users WHERE email = ?', [email]);
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
 
     if (!user) {
       return res.status(401).json({ error: 'Credenciales inválidas.' });
@@ -102,7 +102,7 @@ router.post('/change-password', async (req, res) => {
     }
 
     const db = await getDb();
-    const user = db.get('SELECT * FROM users WHERE id = ?', [decoded.id]);
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [decoded.id]);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
     if (!bcrypt.compareSync(currentPassword, user.password)) {
@@ -110,7 +110,7 @@ router.post('/change-password', async (req, res) => {
     }
 
     const hashed = bcrypt.hashSync(newPassword, 10);
-    db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, decoded.id]);
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, decoded.id]);
 
     res.json({ message: 'Contraseña actualizada correctamente.' });
   } catch (err) {
