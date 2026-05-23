@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTech Systems - Mi Panel</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dash-section {
+            background-color: var(--bg-main);
+            min-height: calc(100vh - 76px);
+        }
+        .welcome-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-card .glow {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            top: -80px;
+            right: -80px;
+        }
+        .section-title {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-left: 3px solid var(--accent-color);
+            padding-left: 12px;
+        }
+        .project-mini {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            transition: border-color 0.3s ease;
+        }
+        .project-mini:hover {
+            border-color: var(--accent-color);
+        }
+        .stat-box {
+            text-align: center;
+            padding: 16px;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .stat-box .num {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-box .lbl {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+        .quick-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+            height: 100%;
+        }
+        .quick-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-4px);
+            color: inherit;
+        }
+        .quick-card .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .quick-card h6 {
+            color: #fff;
+            font-weight: 700;
+        }
+        .quick-card p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav
+        class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
+        <div class="container">
+            <a class="navbar-brand font-monospace fw-bold text-accent" href="index.html">
+                <span class="text-white">&lt;</span>CORETECH<span class="text-white">_SYSTEMS&gt;</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav text-center pt-3 pt-lg-0">
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="index.html#agencia">Agencia</a></li>
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="soluciones.html">Soluciones</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="dash-section py-4">
+        <div class="container py-2">
+
+            <div class="welcome-card mb-4">
+                <div class="glow"></div>
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div>
+                        <div class="font-monospace text-accent mb-1 fs-7">[ USER_PANEL ]</div>
+                        <h3 class="text-white fw-bold mb-1 fs-4" id="welcomeName">Bienvenido</h3>
+                        <p class="text-muted-custom mb-0 fs-7" id="userEmail">Cargando...</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="account-settings.html" class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7">⚙️ Ajustes</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4">
+                    <div class="stat-box">
+                        <div class="num" id="userStatProjects">-</div>
+                        <div class="lbl">Proyectos</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="stat-box">
+                        <div class="num" id="userStatMember">-</div>
+                        <div class="lbl">Miembro desde</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h5 class="section-title mb-3">Acceso rápido</h5>
+                <div class="row g-3">
+                    <div class="col-6 col-md-4">
+                        <a href="soluciones.html" class="quick-card">
+                            <div class="icon">📂</div>
+                            <h6>Ver Proyectos</h6>
+                            <p>Explora el portafolio de CoreTech</p>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <a href="account-settings.html" class="quick-card">
+                            <div class="icon">⚙️</div>
+                            <h6>Mi Cuenta</h6>
+                            <p>Configuración y datos personales</p>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <a href="index.html" class="quick-card">
+                            <div class="icon">🏠</div>
+                            <h6>Ver Sitio</h6>
+                            <p>Ir a la página principal</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="section-title mb-3">Proyectos disponibles</h5>
+            <div id="userProjectsList" class="row g-3">
+                <div class="col-12 text-center text-muted-custom py-4 font-monospace">Cargando proyectos...</div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer
+        class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
+        <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+
+        function checkAuth() {
+            const user = getUser();
+            if (!user) window.location.href = 'login.html';
+        }
+
+        function loadUserData() {
+            const user = getUser();
+            if (!user) return;
+            document.getElementById('welcomeName').textContent = 'Hola, ' + user.name;
+            document.getElementById('userEmail').textContent = user.email + ' · ' + (user.role === 'admin' ? 'Administrador' : 'Cliente');
+        }
+
+        async function loadProjects() {
+            const container = document.getElementById('userProjectsList');
+            try {
+                const res = await fetch(API + '/api/user/projects', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const projects = await res.json();
+                if (!projects.length) {
+                    container.innerHTML = '<div class="col-12 text-center text-muted-custom py-4 font-monospace">No tienes proyectos asignados aún. El administrador te asignará proyectos.</div>';
+                    return;
+                }
+                document.getElementById('userStatProjects').textContent = projects.length;
+                container.innerHTML = projects.map(p => {
+                    const tags = Array.isArray(p.tags) ? p.tags : [];
+                    const tagHtml = tags.map(t => `<span class="project-tag">${t}</span>`).join('');
+                    return `
+                        <div class="col-md-6 col-12">
+                            <div class="project-mini">
+                                <div class="mb-1">${tagHtml}</div>
+                                <h6 class="text-white fw-bold mb-1">${p.title}</h6>
+                                <p class="text-muted-custom fs-7 mb-0">${p.description.substring(0, 120)}${p.description.length > 120 ? '...' : ''}</p>
+                                <div class="project-stats mt-2">
+                                    ${p.year ? '<span>📅 ' + p.year + '</span>' : ''}
+                                    ${p.tech_stack ? '<span>💠 ' + p.tech_stack + '</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch {
+                container.innerHTML = '<div class="col-12 text-center text-muted-custom py-4 font-monospace">Error al cargar proyectos.</div>';
+            }
+        }
+
+        function loadMemberSince() {
+            const user = getUser();
+            if (user && user.id) {
+                document.getElementById('userStatMember').textContent = new Date().toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+            }
+        }
+
+        checkAuth();
+        loadUserData();
+        loadProjects();
+        loadMemberSince();
+    </script>
+
+</body>
+
+</html>

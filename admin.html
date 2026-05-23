@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTech Systems - Panel Admin</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-section {
+            background-color: var(--bg-main);
+            min-height: calc(100vh - 76px);
+        }
+        .project-row {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+        .project-row:hover {
+            border-color: var(--accent-color);
+        }
+        .project-row .thumb {
+            width: 80px;
+            height: 60px;
+            border-radius: 6px;
+            background-color: #151a26;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .admin-tag {
+            display: inline-block;
+            background-color: rgba(124, 58, 237, 0.12);
+            color: var(--accent-color);
+            border-radius: 4px;
+            padding: 1px 8px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 4px;
+        }
+        .btn-icon {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            transition: all 0.3s ease;
+        }
+        .btn-icon:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        .btn-icon.delete:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        .empty-state {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 60px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
+        <div class="container">
+            <a class="navbar-brand font-monospace fw-bold text-accent" href="index.html">
+                <span class="text-white">&lt;</span>CORETECH<span class="text-white">_SYSTEMS&gt;</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav text-center pt-3 pt-lg-0">
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="index.html#agencia">Agencia</a></li>
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="soluciones.html">Soluciones</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="admin-section py-5">
+        <div class="container py-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+                <div>
+                    <div class="font-monospace text-accent mb-1 fs-7">[ ADMIN_PANEL ]</div>
+                    <h2 class="text-white fw-bold mb-0 fs-3">Administrar Proyectos</h2>
+                </div>
+                <a href="add-project.html" class="btn btn-accent px-4 py-2 fw-bold text-white">+ Nuevo Proyecto</a>
+            </div>
+
+            <div id="projectsList"></div>
+            <div id="loading" class="text-center text-muted-custom py-5 font-monospace">Cargando proyectos...</div>
+        </div>
+    </section>
+
+    <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
+        <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+
+        function checkAuth() {
+            const user = getUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadProjects() {
+            const container = document.getElementById('projectsList');
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const res = await fetch(`${API}/api/projects`);
+                const projects = await res.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (!projects.length) {
+                    container.innerHTML = '<div class="empty-state"><p class="fs-5 mb-2">No hay proyectos aún</p><p class="fs-7">Crea tu primer proyecto para mostrarlo en el portafolio.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = projects.map(p => {
+                    const tags = Array.isArray(p.tags) ? p.tags : [];
+                    const tagHtml = tags.map(t => `<span class="admin-tag">${t}</span>`).join('');
+                    const initials = p.title.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                    return `
+                        <div class="project-row p-3 mb-3 d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3">
+                            <div class="thumb">${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">` : initials}</div>
+                            <div class="flex-grow-1 min-w-0">
+                                <h6 class="text-white mb-1 fw-bold">${p.title}</h6>
+                                <p class="text-muted-custom mb-1 fs-7 text-truncate">${p.description}</p>
+                                <div>${tagHtml} ${p.year ? `<span class="text-muted-custom font-monospace fs-7">${p.year}</span>` : ''}</div>
+                            </div>
+                            <div class="d-flex gap-2 flex-shrink-0">
+                                <a href="edit-project.html?id=${p.id}" class="btn btn-icon" title="Editar">✏️</a>
+                                <button class="btn btn-icon delete" onclick="deleteProject(${p.id})" title="Eliminar">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                document.getElementById('loading').textContent = 'Error al cargar proyectos.';
+            }
+        }
+
+        async function deleteProject(id) {
+            if (!confirm('¿Eliminar este proyecto definitivamente?')) return;
+            try {
+                const res = await fetch(`${API}/api/projects/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.error || 'Error al eliminar.');
+                    return;
+                }
+                loadProjects();
+            } catch {
+                alert('Error de conexión.');
+            }
+        }
+
+        checkAuth();
+        loadProjects();
+    </script>
+</body>
+
+</html>
