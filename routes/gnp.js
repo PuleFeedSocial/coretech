@@ -4,6 +4,8 @@ const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, Discor
 const { authenticate } = require('../middleware/auth');
 const getDb = require('../database');
 
+const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
+
 async function getCachedNames(userIds) {
   if (!userIds.length) return {};
   const unique = [...new Set(userIds.filter(Boolean))];
@@ -13,6 +15,44 @@ async function getCachedNames(userIds) {
     result[doc.userId] = doc.globalName;
   }
   return result;
+}
+
+let warming = false;
+async function backgroundFetch(userIds) {
+  if (!DISCORD_TOKEN || warming) return;
+  warming = true;
+  const unique = [...new Set(userIds.filter(Boolean))];
+  const allDocs = await DiscordUser.find({ userId: { $in: unique } });
+  const cachedIds = new Set();
+  for (const doc of allDocs) {
+    if (Date.now() - new Date(doc.updatedAt).getTime() < 86400000) cachedIds.add(doc.userId);
+  }
+  const toFetch = unique.filter(id => !cachedIds.has(id));
+  if (!toFetch.length) { warming = false; return; }
+  for (let i = 0; i < toFetch.length; i += 5) {
+    await Promise.all(toFetch.slice(i, i + 5).map(async (userId) => {
+      try {
+        const r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+          headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        const name = data.global_name || data.username;
+        if (name) await DiscordUser.updateOne({ userId }, { $set: { globalName: name, updatedAt: new Date() } }, { upsert: true });
+      } catch {}
+    }));
+    if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 1000));
+  }
+  warming = false;
+}
+
+async function prewarmCache() {
+  try {
+    const docs = await DataGNP.find({});
+    const ids = [];
+    for (const d of docs) if (d.key !== 'config' && d.valor) ids.push(...d.valor);
+    if (ids.length) backgroundFetch(ids);
+  } catch {}
 }
 
 async function tieneAcceso(userId) {
@@ -48,6 +88,7 @@ router.get('/cuarteles', async (req, res) => {
   }));
   const allIds = cuarteles.flatMap(c => c.miembros);
   const names = await getCachedNames(allIds);
+  backgroundFetch(allIds);
   const enriched = cuarteles.map(c => ({
     ...c,
     miembros: c.miembros.map(id => ({ userId: id, displayName: names[id] || id }))
@@ -60,6 +101,7 @@ router.get('/cuarteles/:nombre', async (req, res) => {
   if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado.' });
   const miembros = doc.valor || [];
   const names = await getCachedNames(miembros);
+  backgroundFetch(miembros);
   res.json({
     nombre: doc.key,
     miembros: miembros.map(id => ({ userId: id, displayName: names[id] || id }))
@@ -79,6 +121,7 @@ router.get('/miembros/:userId', async (req, res) => {
     }
   }
   const names = await getCachedNames([userId]);
+  backgroundFetch([userId]);
   res.json({
     userId,
     displayName: names[userId] || userId,
@@ -102,6 +145,7 @@ router.get('/asistencias', async (req, res) => {
   const docs = await AsistenciaGNP.find(filtro).sort({ timestamp: -1 }).skip((page - 1) * limit).limit(parseInt(limit));
   const allIds = docs.map(d => d.userId);
   const names = await getCachedNames(allIds);
+  backgroundFetch(allIds);
   const enriched = docs.map(d => ({
     ...d.toObject(),
     displayName: names[d.userId] || d.userId
@@ -123,6 +167,7 @@ router.get('/h50', async (req, res) => {
   const docs = await H50GNP.find(filtro).sort({ timestamp: -1 }).skip((page - 1) * limit).limit(parseInt(limit));
   const allIds = docs.flatMap(d => [d.userId, d.emisor, d.relegado]);
   const names = await getCachedNames(allIds);
+  backgroundFetch(allIds);
   const enriched = docs.map(d => ({
     ...d.toObject(),
     displayName: names[d.userId] || d.userId,
@@ -139,11 +184,22 @@ router.get('/ausencias', async (req, res) => {
   const docs = await AusenciaGNP.find(filtro).sort({ fechaFin: -1 });
   const allIds = docs.map(d => d.userId);
   const names = await getCachedNames(allIds);
+  backgroundFetch(allIds);
   const enriched = docs.map(d => ({
     ...d.toObject(),
     displayName: names[d.userId] || d.userId
   }));
   res.json(enriched);
+});
+
+setTimeout(prewarmCache, 5000);
+
+router.post('/refresh-names', async (req, res) => {
+  const docs = await DataGNP.find({});
+  const ids = [];
+  for (const d of docs) if (d.key !== 'config' && d.valor) ids.push(...d.valor);
+  backgroundFetch(ids);
+  res.json({ message: `Recarga iniciada para ${[...new Set(ids)].length} usuarios.` });
 });
 
 // ---- Gestión manual de nombres (solo admin) ----
