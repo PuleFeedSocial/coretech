@@ -9,6 +9,7 @@
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -102,14 +103,16 @@
                         </a>
                     </div>
                     <div class="col-6 col-md-3">
-                        <a href="#" class="quick-card" onclick="document.getElementById('codeTab').click(); return false;">
+                        <a href="#" class="quick-card"
+                            onclick="document.getElementById('codeTab').click(); return false;">
                             <div class="icon">🔑</div>
                             <h6>Generar Códigos</h6>
                             <p>Activar nuevas cuentas</p>
                         </a>
                     </div>
                     <div class="col-6 col-md-3">
-                        <a href="#" class="quick-card" onclick="document.getElementById('usersTab').click(); return false;">
+                        <a href="#" class="quick-card"
+                            onclick="document.getElementById('usersTab').click(); return false;">
                             <div class="icon">👥</div>
                             <h6>Usuarios</h6>
                             <p>Administrar cuentas</p>
@@ -149,7 +152,9 @@
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
-                            <tr><td colspan="8" class="text-center text-muted-custom font-monospace">Cargando...</td></tr>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted-custom font-monospace">Cargando...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -166,7 +171,8 @@
                             <option value="25">25 códigos</option>
                             <option value="50">50 códigos</option>
                         </select>
-                        <button class="btn btn-accent px-3 py-1 fw-bold text-white" onclick="generateCodes()">+ Generar</button>
+                        <button class="btn btn-accent px-3 py-1 fw-bold text-white" onclick="generateCodes()">+
+                            Generar</button>
                     </div>
                 </div>
                 <div id="generateResult" class="mb-3" style="display:none;"></div>
@@ -182,7 +188,9 @@
                             </tr>
                         </thead>
                         <tbody id="codesTableBody">
-                            <tr><td colspan="5" class="text-center text-muted-custom font-monospace">Cargando...</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted-custom font-monospace">Cargando...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -216,7 +224,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-secondary-custom">
-                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-outline-secondary-custom text-white"
+                        data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -431,14 +440,9 @@
 
         let managingUserId = null;
 
-        async function manageUserProjects(id, name) {
-            managingUserId = id;
-            document.getElementById('modalUserTitle').textContent = 'Proyectos de ' + name;
+        async function loadUserProjectsContent(id) {
             document.getElementById('assignedProjects').innerHTML = '<span class="text-muted-custom fs-7">Cargando...</span>';
             document.getElementById('availableProjects').innerHTML = '<span class="text-muted-custom fs-7">Cargando...</span>';
-
-            const modal = new bootstrap.Modal(document.getElementById('userProjectsModal'));
-            modal.show();
 
             try {
                 const res = await fetch(API + '/api/admin/users/' + id + '/projects', {
@@ -446,33 +450,38 @@
                 });
                 const data = await res.json();
 
-                const assignedDiv = document.getElementById('assignedProjects');
-                if (data.assigned.length === 0) {
-                    assignedDiv.innerHTML = '<span class="text-muted-custom fs-7">Sin proyectos asignados</span>';
-                } else {
-                    assignedDiv.innerHTML = data.assigned.map(p =>
+                document.getElementById('assignedProjects').innerHTML = !data.assigned.length
+                    ? '<span class="text-muted-custom fs-7">Sin proyectos asignados</span>'
+                    : data.assigned.map(p =>
                         '<div class="d-flex justify-content-between align-items-center bg-dark-custom p-2 rounded border border-secondary-custom">' +
                         '<span class="text-white fs-7">' + p.title + '</span>' +
                         '<button class="btn-sm-icon danger" onclick="unassignProject(' + p.id + ')" title="Desasignar">✕</button>' +
                         '</div>'
                     ).join('');
-                }
 
-                const availableDiv = document.getElementById('availableProjects');
-                if (data.available.length === 0) {
-                    availableDiv.innerHTML = '<span class="text-muted-custom fs-7">No hay proyectos disponibles</span>';
-                } else {
-                    availableDiv.innerHTML = data.available.map(p =>
+                document.getElementById('availableProjects').innerHTML = !data.available.length
+                    ? '<span class="text-muted-custom fs-7">No hay proyectos disponibles</span>'
+                    : data.available.map(p =>
                         '<div class="d-flex justify-content-between align-items-center bg-dark-custom p-2 rounded border border-secondary-custom">' +
                         '<span class="text-white fs-7">' + p.title + '</span>' +
                         '<button class="btn-sm-icon" onclick="assignProject(' + p.id + ')" title="Asignar">+</button>' +
                         '</div>'
                     ).join('');
-                }
             } catch {
                 document.getElementById('assignedProjects').innerHTML = '<span class="text-muted-custom fs-7">Error al cargar</span>';
                 document.getElementById('availableProjects').innerHTML = '<span class="text-muted-custom fs-7">Error al cargar</span>';
             }
+        }
+
+        async function manageUserProjects(id, name) {
+            managingUserId = id;
+            document.getElementById('modalUserTitle').textContent = 'Proyectos de ' + name;
+            var modal = bootstrap.Modal.getInstance(document.getElementById('userProjectsModal'));
+            if (!modal) {
+                modal = new bootstrap.Modal(document.getElementById('userProjectsModal'));
+                modal.show();
+            }
+            loadUserProjectsContent(id);
         }
 
         async function assignProject(projectId) {
@@ -487,7 +496,7 @@
                     body: JSON.stringify({ project_id: projectId })
                 });
                 if (res.ok) {
-                    manageUserProjects(managingUserId, document.getElementById('modalUserTitle').textContent.replace('Proyectos de ', ''));
+                    loadUserProjectsContent(managingUserId);
                 } else {
                     const data = await res.json();
                     alert(data.error || 'Error al asignar.');
@@ -505,8 +514,7 @@
                     headers: { 'Authorization': 'Bearer ' + getToken() }
                 });
                 if (res.ok) {
-                    const name = document.getElementById('modalUserTitle').textContent.replace('Proyectos de ', '');
-                    manageUserProjects(managingUserId, name);
+                    loadUserProjectsContent(managingUserId);
                 } else {
                     alert('Error al desasignar.');
                 }
