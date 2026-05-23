@@ -35,8 +35,8 @@ async function runSeed() {
   const existing = await db.get('SELECT id FROM users WHERE role = ?', ['admin']);
   if (existing) return;
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@coretech.io';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!';
+  const adminEmail = 'admin@coretech.io';
+  const adminPassword = 'Admin123!';
   const hashed = bcrypt.hashSync(adminPassword, 10);
   await db.run('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
     ['Administrador CoreTech', adminEmail, hashed, 'admin']);
