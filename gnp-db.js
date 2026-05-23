@@ -27,7 +27,8 @@ async function conectar() {
   if (connected) return;
   const uri = process.env.MONGO_URI;
   if (!uri) throw new Error('Variable MONGO_URI no encontrada en el entorno');
-  await mongoose.connect(uri);
+  mongoose.connection.on('error', err => console.error('[GNP] Error MongoDB:', err.message));
+  await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 15000 });
   connected = true;
 }
 
