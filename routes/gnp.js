@@ -1,8 +1,63 @@
 const express = require('express');
 const router = express.Router();
-const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP } = require('../gnp-db');
+const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser } = require('../gnp-db');
 const { authenticate } = require('../middleware/auth');
 const getDb = require('../database');
+
+const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function resolveDiscordUsers(userIds) {
+  if (!userIds.length) return {};
+  const unique = [...new Set(userIds.filter(Boolean))];
+  const result = {};
+
+  const cacheDocs = await DiscordUser.find({ userId: { $in: unique } });
+  const cached = {};
+  const needsFetch = [];
+  const now = Date.now();
+
+  for (const doc of cacheDocs) {
+    if (now - new Date(doc.updatedAt).getTime() < CACHE_TTL_MS) {
+      cached[doc.userId] = doc.globalName;
+      result[doc.userId] = doc.globalName;
+    } else {
+      needsFetch.push(doc.userId);
+    }
+  }
+
+  for (const id of unique) {
+    if (!(id in cached)) needsFetch.push(id);
+  }
+
+  if (!needsFetch.length || !DISCORD_TOKEN) return result;
+
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < needsFetch.length; i += BATCH_SIZE) {
+    const batch = needsFetch.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map(async (userId) => {
+      try {
+        const apiRes = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+          headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+        });
+        if (!apiRes.ok) return;
+        const data = await apiRes.json();
+        const name = data.global_name || data.username || null;
+        if (name) {
+          await DiscordUser.updateOne(
+            { userId },
+            { $set: { globalName: name, updatedAt: new Date() } },
+            { upsert: true }
+          );
+          result[userId] = name;
+        }
+      } catch { }
+    }));
+    if (i + BATCH_SIZE < needsFetch.length) await new Promise(r => setTimeout(r, 1000));
+  }
+
+  return result;
+}
 
 async function tieneAcceso(userId) {
   const db = await getDb();
@@ -35,13 +90,24 @@ router.get('/cuarteles', async (req, res) => {
     miembros: d.valor || [],
     cantidad: (d.valor || []).length
   }));
-  res.json(cuarteles);
+  const allIds = cuarteles.flatMap(c => c.miembros);
+  const names = await resolveDiscordUsers(allIds);
+  const enriched = cuarteles.map(c => ({
+    ...c,
+    miembros: c.miembros.map(id => ({ userId: id, displayName: names[id] || id }))
+  }));
+  res.json(enriched);
 });
 
 router.get('/cuarteles/:nombre', async (req, res) => {
   const doc = await DataGNP.findOne({ key: req.params.nombre.toLowerCase() });
   if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado.' });
-  res.json({ nombre: doc.key, miembros: doc.valor || [] });
+  const miembros = doc.valor || [];
+  const names = await resolveDiscordUsers(miembros);
+  res.json({
+    nombre: doc.key,
+    miembros: miembros.map(id => ({ userId: id, displayName: names[id] || id }))
+  });
 });
 
 router.get('/miembros/:userId', async (req, res) => {
@@ -56,8 +122,10 @@ router.get('/miembros/:userId', async (req, res) => {
       break;
     }
   }
+  const names = await resolveDiscordUsers([userId]);
   res.json({
     userId,
+    displayName: names[userId] || userId,
     cuartel: cuartelActual,
     ultimoAscenso: perfil?.ultimoAscenso || null,
     ausencia: ausencia ? { fechaFin: ausencia.fechaFin, motivo: ausencia.motivo } : null
@@ -76,7 +144,14 @@ router.get('/asistencias', async (req, res) => {
   }
   const total = await AsistenciaGNP.countDocuments(filtro);
   const docs = await AsistenciaGNP.find(filtro).sort({ timestamp: -1 }).skip((page - 1) * limit).limit(parseInt(limit));
-  res.json({ data: docs, total, page: parseInt(page), limit: parseInt(limit) });
+  const allIds = docs.flatMap(d => [d.userId, d.h50Momento]);
+  const names = await resolveDiscordUsers(allIds);
+  const enriched = docs.map(d => ({
+    ...d.toObject(),
+    displayName: names[d.userId] || d.userId,
+    h50MomentoDisplay: names[d.h50Momento] || d.h50Momento
+  }));
+  res.json({ data: enriched, total, page: parseInt(page), limit: parseInt(limit) });
 });
 
 router.get('/h50', async (req, res) => {
@@ -91,7 +166,15 @@ router.get('/h50', async (req, res) => {
   }
   const total = await H50GNP.countDocuments(filtro);
   const docs = await H50GNP.find(filtro).sort({ timestamp: -1 }).skip((page - 1) * limit).limit(parseInt(limit));
-  res.json({ data: docs, total, page: parseInt(page), limit: parseInt(limit) });
+  const allIds = docs.flatMap(d => [d.userId, d.emisor, d.relegado]);
+  const names = await resolveDiscordUsers(allIds);
+  const enriched = docs.map(d => ({
+    ...d.toObject(),
+    displayName: names[d.userId] || d.userId,
+    emisorDisplay: names[d.emisor] || d.emisor,
+    relegadoDisplay: names[d.relegado] || d.relegado
+  }));
+  res.json({ data: enriched, total, page: parseInt(page), limit: parseInt(limit) });
 });
 
 router.get('/ausencias', async (req, res) => {
@@ -99,7 +182,13 @@ router.get('/ausencias', async (req, res) => {
   const filtro = {};
   if (activas === 'true') filtro.fechaFin = { $gte: new Date() };
   const docs = await AusenciaGNP.find(filtro).sort({ fechaFin: -1 });
-  res.json(docs);
+  const allIds = docs.map(d => d.userId);
+  const names = await resolveDiscordUsers(allIds);
+  const enriched = docs.map(d => ({
+    ...d.toObject(),
+    displayName: names[d.userId] || d.userId
+  }));
+  res.json(enriched);
 });
 
 module.exports = router;

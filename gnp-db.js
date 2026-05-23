@@ -32,4 +32,11 @@ async function conectar() {
   connected = true;
 }
 
-module.exports = { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP };
+const DiscordUserSchema = new mongoose.Schema({
+  userId: { type: String, unique: true },
+  globalName: String,
+  updatedAt: { type: Date, default: Date.now }
+});
+const DiscordUser = mongoose.model('DiscordUser', DiscordUserSchema);
+
+module.exports = { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser };

@@ -38,7 +38,7 @@
 
             <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <input type="text" class="form-control form-control-custom" id="searchUserId" placeholder="Buscar por ID de Discord" style="max-width:300px;">
+                    <input type="text" class="form-control form-control-custom" id="searchUserId" placeholder="Buscar por nombre o ID" style="max-width:300px;">
                     <input type="date" class="form-control form-control-custom" id="filterDesde" style="max-width:180px;">
                     <input type="date" class="form-control form-control-custom" id="filterHasta" style="max-width:180px;">
                     <button class="btn btn-accent px-3 py-1 fw-bold text-white" onclick="aplicarFiltros()">Filtrar</button>
@@ -60,7 +60,7 @@
             <div class="tab-content-custom" id="tabAsistencias">
                 <div class="table-responsive">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Discord ID</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>Quien tomó H50</th><th>Fecha</th></tr></thead>
                         <tbody id="asistenciasBody"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
@@ -76,7 +76,7 @@
             <div class="tab-content-custom" id="tabH50">
                 <div class="table-responsive">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Discord ID</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th></tr></thead>
                         <tbody id="h50Body"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
@@ -98,7 +98,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Discord ID</th><th>Fecha fin</th><th>Motivo</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th></tr></thead>
                         <tbody id="ausenciasBody"><tr><td colspan="3" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                     </table>
                 </div>
@@ -171,9 +171,9 @@
                             </div>
                             <div id="miembros_${c.nombre}" style="display:none;" class="mt-3 pt-3 border-top border-secondary-custom">
                                 ${c.miembros.length
-                                    ? c.miembros.map(id => `<div class="d-flex justify-content-between align-items-center py-1">
-                                        <span class="font-monospace fs-7 text-muted-custom">${id}</span>
-                                        <button class="btn-sm-icon" onclick="event.stopPropagation();verMiembro('${id}')">👤</button>
+                                    ? c.miembros.map(m => `<div class="d-flex justify-content-between align-items-center py-1">
+                                        <span class="font-monospace fs-7 text-muted-custom">${m.displayName}</span>
+                                        <button class="btn-sm-icon" onclick="event.stopPropagation();verMiembro('${m.userId}')">👤</button>
                                     </div>`).join('')
                                     : '<span class="text-muted-custom fs-7 font-monospace">Sin personal asignado</span>'}
                             </div>
@@ -202,7 +202,8 @@
 
         async function verMiembro(userId) {
             const modal = new bootstrap.Modal(document.getElementById('memberModal'));
-            document.getElementById('memberModalTitle').textContent = 'Detalle: ' + userId;
+            document.getElementById('memberModalTitle').textContent = 'Detalle';
+
             document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>';
             modal.show();
 
@@ -223,7 +224,8 @@
 
                 document.getElementById('memberModalBody').innerHTML = `
                     <div class="settings-card p-3 mb-3">
-                        <div class="info-row"><span class="info-label">Discord ID</span><span class="info-value font-monospace">${info.userId}</span></div>
+                        <div class="info-row"><span class="info-label">Nombre</span><span class="info-value font-monospace">${info.displayName}</span></div>
+                        <div class="info-row"><span class="info-label">Discord ID</span><span class="info-value font-monospace fs-7 text-muted-custom">${info.userId}</span></div>
                         <div class="info-row"><span class="info-label">Cuartel</span><span class="info-value">${info.cuartel ? info.cuartel.toUpperCase() : 'Sin asignar'}</span></div>
                         <div class="info-row"><span class="info-label">Último ascenso</span><span class="info-value">${info.ultimoAscenso ? new Date(info.ultimoAscenso).toLocaleDateString() : 'Sin registro'}</span></div>
                         ${ausenciaHtml}
@@ -274,10 +276,10 @@
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
                 } else {
                     tbody.innerHTML = d.data.map(a => `<tr>
-                        <td class="font-monospace">${a.userId}</td>
+                        <td class="font-monospace">${a.displayName}</td>
                         <td>${a.cuartel.toUpperCase()}</td>
                         <td>${a.horaEntrada}</td><td>${a.horaSalida}</td>
-                        <td>${a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
+                        <td>${a.h50MomentoDisplay || a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
                     </tr>`).join('');
                 }
                 const totalPag = Math.ceil(d.total / d.limit);
@@ -305,10 +307,10 @@
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
                 } else {
                     tbody.innerHTML = d.data.map(x => `<tr>
-                        <td class="font-monospace">${x.userId}</td>
+                        <td class="font-monospace">${x.displayName}</td>
                         <td>${x.cuartel.toUpperCase()}</td>
                         <td>${Math.floor(x.minutos/60)}h ${x.minutos%60}m</td>
-                        <td>${x.emisor}</td><td>${x.relegado}</td>
+                        <td>${x.emisorDisplay || x.emisor}</td><td>${x.relegadoDisplay || x.relegado}</td>
                         <td class="font-monospace">${x.fechaString}</td>
                     </tr>`).join('');
                 }
@@ -331,7 +333,7 @@
                     tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">Sin ausencias</td></tr>';
                 } else {
                     tbody.innerHTML = docs.map(a => `<tr>
-                        <td class="font-monospace">${a.userId}</td>
+                        <td class="font-monospace">${a.displayName}</td>
                         <td class="font-monospace">${new Date(a.fechaFin).toLocaleDateString()}</td>
                         <td>${a.motivo}</td>
                     </tr>`).join('');
