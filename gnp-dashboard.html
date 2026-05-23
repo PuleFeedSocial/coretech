@@ -148,8 +148,9 @@
                 });
                 if (res.status === 403) { window.location.href = 'dashboard.html'; return; }
                 if (res.status === 503) {
+                    const errData = await res.json().catch(() => ({}));
                     document.getElementById('cuartelesGrid').innerHTML =
-                        '<div class="col-12 text-center text-muted-custom py-5 font-monospace">⚠️ MongoDB no configurado. Contacta al administrador.</div>';
+                        '<div class="col-12 text-center text-muted-custom py-5 font-monospace">⚠️ ' + (errData.error || 'Error de conexión') + '</div>';
                     return;
                 }
                 const cuarteles = await res.json();

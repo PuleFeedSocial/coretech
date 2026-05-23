@@ -70,7 +70,8 @@ app.get('/debug', async (req, res) => {
     const codeCount = (await db.all('SELECT COUNT(*) as c FROM activation_codes'))[0]?.c || 0;
     const projectCount = (await db.all('SELECT COUNT(*) as c FROM projects'))[0]?.c || 0;
     const dbMode = process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite';
-    res.json({ dbMode, admin: admin || null, userCount, codeCount, projectCount });
+    const mongoUriSet = !!process.env.MONGO_URI;
+    res.json({ dbMode, mongoUriSet, admin: admin || null, userCount, codeCount, projectCount });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
