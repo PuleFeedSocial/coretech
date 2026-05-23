@@ -4,9 +4,7 @@
     --bg-secondary: #12161f;
     --text-primary: 'Plus Jakarta Sans', sans-serif;
     --accent-color: #7c3aed;
-    /* Morado elegante elegante (Purple 600) */
     --accent-hover: #9333ea;
-    /* Morado para hover */
     --border-color: #262c36;
     --text-muted: #8b949e;
 }
@@ -15,6 +13,8 @@ body {
     background-color: var(--bg-main);
     font-family: var(--text-primary);
     color: #f0f6fc;
+    overflow-x: hidden;
+    /* Evita scrolls horizontales raros en celulares */
 }
 
 .font-monospace {
@@ -33,7 +33,15 @@ body {
     max-width: 600px;
 }
 
-/* COMPONENTES ESPECÍFICOS */
+.max-w-450 {
+    max-width: 450px;
+}
+
+.fs-7 {
+    font-size: 0.85rem !important;
+}
+
+/* COMPONENTES DE COLOR */
 .bg-dark-custom {
     background-color: var(--bg-main) !important;
 }
@@ -46,7 +54,7 @@ body {
     border-color: var(--border-color) !important;
 }
 
-/* BOTONES PERSONALIZADOS */
+/* BOTONES ADAPTABLES */
 .btn-accent {
     background-color: var(--accent-color);
     border: 1px solid var(--accent-color);
@@ -68,7 +76,6 @@ body {
 
 .btn-outline-accent:hover {
     background-color: var(--accent-color);
-    border-color: var(--accent-color);
     color: #fff !important;
     box-shadow: 0 0 20px rgba(124, 58, 237, 0.45);
 }
@@ -83,11 +90,10 @@ body {
     border-color: #3e4756;
 }
 
-/* HERO & SECCIONES */
+/* ESTRUCTURA HERO (Mínimo de alto en PC, fluido en móviles) */
 .hero-section {
     min-height: 80vh;
     background-color: var(--bg-main);
-    padding: 60px 0;
 }
 
 .tech-card {
@@ -114,14 +120,52 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* EFECTO DE RESPLANDOR MORADO (GLOW EFFECT) */
+/* RESPLANDOR (GLOW EFFECT) */
 .glow-effect {
     position: absolute;
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
     background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
     border-radius: 50%;
     pointer-events: none;
-    top: -100px;
-    right: -100px;
+    top: -80px;
+    right: -80px;
+}
+
+/* ==========================================================================
+   MEDIA QUERIES - OPTIMIZACIÓN RESPONSIVE (Móviles y Tablets)
+   ========================================================================== */
+
+/* Ajustes para Tablets y Celulares (Pantallas menores a 992px) */
+@media (max-width: 991.98px) {
+    .hero-section {
+        min-height: auto;
+        /* Permite que el contenido dicte el alto */
+    }
+
+    .navbar-collapse {
+        background-color: var(--bg-main);
+        padding-bottom: 20px;
+    }
+}
+
+/* Ajustes específicos para Celulares (Pantallas menores a 576px) */
+@media (max-width: 575.98px) {
+    .hero-section h1 {
+        font-size: 2.2rem !important;
+        /* Texto del título más cómodo para pulgares */
+    }
+
+    .p-5 {
+        padding: 1.5rem !important;
+        /* Menos espacio interno en cards para ganar pantalla */
+    }
+
+    .glow-effect {
+        width: 150px;
+        height: 150px;
+        top: -50px;
+        right: -50px;
+        /* Reducimos el glow para que no sature pantallas chicas */
+    }
 }
