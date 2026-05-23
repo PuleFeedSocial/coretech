@@ -24,7 +24,7 @@ router.use(async (req, res, next) => {
     await conectar();
     next();
   } catch (e) {
-    res.status(503).json({ error: 'MongoDB no configurado. Se necesita MONGO_URI.' });
+    res.status(503).json({ error: e.message });
   }
 });
 
