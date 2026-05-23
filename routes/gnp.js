@@ -4,16 +4,16 @@ const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP } = req
 const { authenticate } = require('../middleware/auth');
 const getDb = require('../database');
 
-const PROJECTO_TITULO = 'Bot Guardia Nacional';
-
 async function tieneAcceso(userId) {
   const db = await getDb();
   const user = await db.get('SELECT role FROM users WHERE id = ?', [userId]);
   if (user && user.role === 'admin') return true;
-  const proyecto = await db.get('SELECT id FROM projects WHERE title = ?', [PROJECTO_TITULO]);
-  if (!proyecto) return false;
-  const asignado = await db.get('SELECT id FROM user_projects WHERE user_id = ? AND project_id = ?', [userId, proyecto.id]);
-  return !!asignado;
+  const proyectos = await db.all('SELECT id FROM projects WHERE LOWER(title) LIKE ?', ['%guardia%']);
+  for (const p of proyectos) {
+    const asignado = await db.get('SELECT id FROM user_projects WHERE user_id = ? AND project_id = ?', [userId, p.id]);
+    if (asignado) return true;
+  }
+  return false;
 }
 
 router.use(authenticate);
