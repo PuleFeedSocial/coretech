@@ -60,6 +60,20 @@ async function runSeed() {
   }
 }
 
+app.get('/debug', async (req, res) => {
+  try {
+    const db = await getDb();
+    const admin = await db.get('SELECT id, email, role FROM users WHERE role = ?', ['admin']);
+    const userCount = (await db.all('SELECT COUNT(*) as c FROM users'))[0]?.c || 0;
+    const codeCount = (await db.all('SELECT COUNT(*) as c FROM activation_codes'))[0]?.c || 0;
+    const projectCount = (await db.all('SELECT COUNT(*) as c FROM projects'))[0]?.c || 0;
+    const dbMode = process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite';
+    res.json({ dbMode, admin: admin || null, userCount, codeCount, projectCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/seed', async (req, res) => {
   try {
     await runSeed();

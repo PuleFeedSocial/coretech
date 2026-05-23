@@ -61,11 +61,11 @@ router.post('/login', async (req, res) => {
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
 
     if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+      return res.status(401).json({ error: 'Credenciales inválidas.', code: 'USER_NOT_FOUND' });
     }
 
     if (!bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: 'Credenciales inválidas.' });
+      return res.status(401).json({ error: 'Credenciales inválidas.', code: 'WRONG_PASSWORD' });
     }
 
     const token = jwt.sign(
