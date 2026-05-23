@@ -71,7 +71,27 @@ app.get('/debug', async (req, res) => {
     const projectCount = (await db.all('SELECT COUNT(*) as c FROM projects'))[0]?.c || 0;
     const dbMode = process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite';
     const mongoUriSet = !!process.env.MONGO_URI;
-    res.json({ dbMode, mongoUriSet, admin: admin || null, userCount, codeCount, projectCount });
+    let mongoInfo = null;
+    if (mongoUriSet) {
+      try {
+        const mongoose = require('mongoose');
+        const conn = mongoose.connection;
+        if (conn && conn.readyState === 1) {
+          const collections = await conn.db.listCollections().toArray();
+          const info = [];
+          for (const col of collections) {
+            const count = await conn.db.collection(col.name).countDocuments();
+            info.push({ nombre: col.name, documentos: count });
+          }
+          mongoInfo = { baseDeDatos: conn.db.databaseName, colecciones: info };
+        } else {
+          mongoInfo = { conectado: false, estado: conn?.readyState };
+        }
+      } catch (e) {
+        mongoInfo = { error: e.message };
+      }
+    }
+    res.json({ dbMode, mongoUriSet, mongoInfo, admin: admin || null, userCount, codeCount, projectCount });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
