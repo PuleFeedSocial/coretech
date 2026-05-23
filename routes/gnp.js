@@ -21,38 +21,50 @@ let warming = false;
 async function backgroundFetch(userIds) {
   if (!DISCORD_TOKEN || warming) return;
   warming = true;
-  const unique = [...new Set(userIds.filter(Boolean))];
-  const allDocs = await DiscordUser.find({ userId: { $in: unique } });
-  const cachedIds = new Set();
-  for (const doc of allDocs) {
-    if (Date.now() - new Date(doc.updatedAt).getTime() < 86400000) cachedIds.add(doc.userId);
+  try {
+    const unique = [...new Set(userIds.filter(Boolean))];
+    const allDocs = await DiscordUser.find({ userId: { $in: unique } });
+    const cachedIds = new Set();
+    for (const doc of allDocs) {
+      if (Date.now() - new Date(doc.updatedAt).getTime() < 86400000) cachedIds.add(doc.userId);
+    }
+    const toFetch = unique.filter(id => !cachedIds.has(id));
+    if (!toFetch.length) return;
+    console.log(`[GNP] Resolviendo ${toFetch.length} nombres desde Discord API...`);
+    let ok = 0, fail = 0;
+    for (let i = 0; i < toFetch.length; i += 5) {
+      await Promise.all(toFetch.slice(i, i + 5).map(async (userId) => {
+        try {
+          const r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+            headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+          });
+          if (!r.ok) { fail++; return; }
+          const data = await r.json();
+          const name = data.global_name || data.username;
+          if (name) {
+            await DiscordUser.updateOne({ userId }, { $set: { globalName: name, updatedAt: new Date() } }, { upsert: true });
+            ok++;
+          }
+        } catch {}
+      }));
+      if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 1000));
+    }
+    console.log(`[GNP] Resueltos: ${ok} ok, ${fail} fallidos`);
+  } finally {
+    warming = false;
   }
-  const toFetch = unique.filter(id => !cachedIds.has(id));
-  if (!toFetch.length) { warming = false; return; }
-  for (let i = 0; i < toFetch.length; i += 5) {
-    await Promise.all(toFetch.slice(i, i + 5).map(async (userId) => {
-      try {
-        const r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-          headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
-        });
-        if (!r.ok) return;
-        const data = await r.json();
-        const name = data.global_name || data.username;
-        if (name) await DiscordUser.updateOne({ userId }, { $set: { globalName: name, updatedAt: new Date() } }, { upsert: true });
-      } catch {}
-    }));
-    if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 1000));
-  }
-  warming = false;
 }
 
 async function prewarmCache() {
   try {
-    const docs = await DataGNP.find({});
+    await conectar();
+    const docs = await DataGNP.find({}).maxTimeMS(5000);
     const ids = [];
     for (const d of docs) if (d.key !== 'config' && d.valor) ids.push(...d.valor);
     if (ids.length) backgroundFetch(ids);
-  } catch {}
+  } catch (e) {
+    console.log('[GNP] Prewarm omitido (aún no conectado):', e.message);
+  }
 }
 
 async function tieneAcceso(userId) {
@@ -232,6 +244,38 @@ router.delete('/nombres/:userId', async (req, res) => {
   if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
   await DiscordUser.deleteOne({ userId: req.params.userId });
   res.json({ message: 'Nombre eliminado' });
+});
+
+router.get('/diagnostico', async (req, res) => {
+  const db = await getDb();
+  const user = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
+  if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
+  const result = {
+    discordTokenConfigurado: !!DISCORD_TOKEN,
+    discordTokenLength: DISCORD_TOKEN ? DISCORD_TOKEN.length : 0,
+    warming,
+    usuariosEnCache: await DiscordUser.countDocuments({})
+  };
+  if (DISCORD_TOKEN) {
+    try {
+      const test = await fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+      });
+      result.tokenValido = test.ok;
+      result.statusCode = test.status;
+      if (test.ok) {
+        const data = await test.json();
+        result.botName = data.username;
+      } else {
+        const err = await test.json().catch(() => ({}));
+        result.errorDiscord = err;
+      }
+    } catch (e) {
+      result.tokenValido = false;
+      result.errorRed = e.message;
+    }
+  }
+  res.json(result);
 });
 
 module.exports = router;
