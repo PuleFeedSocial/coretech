@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP } = require('../gnp-db');
 const { authenticate } = require('../middleware/auth');
@@ -102,4 +103,20 @@ router.get('/ausencias', async (req, res) => {
   res.json(docs);
 });
 
-module.exports = router;
+router.get('/debug/colecciones', async (req, res) => {
+  try {
+    const conn = mongoose.connection;
+    if (!conn || conn.readyState !== 1) {
+      return res.json({ conectado: false, estado: conn?.readyState });
+    }
+    const collections = await conn.db.listCollections().toArray();
+    const info = [];
+    for (const col of collections) {
+      const count = await conn.db.collection(col.name).countDocuments();
+      info.push({ nombre: col.name, documentos: count });
+    }
+    res.json({ conectado: true, baseDeDatos: conn.db.databaseName, colecciones: info });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
