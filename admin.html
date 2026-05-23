@@ -49,6 +49,42 @@
         </div>
     </section>
 
+    <section class="admin-section py-5 bg-dark-secondary" id="nombresSection">
+        <div class="container py-3">
+            <div class="mb-4">
+                <div class="font-monospace text-accent mb-1 fs-7">[ GNP_NAMES ]</div>
+                <h2 class="text-white fw-bold mb-0 fs-3">Nombres de Discord</h2>
+                <p class="text-muted-custom fs-7 mt-2">Asigna nombres visibles a los IDs de Discord para el dashboard GNP.</p>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <div class="access-card p-3 rounded border border-secondary-custom bg-dark-custom">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input type="text" class="form-control form-control-custom flex-shrink-0" id="inputUserId" placeholder="Discord ID" style="max-width:200px;">
+                            <input type="text" class="form-control form-control-custom flex-grow-1" id="inputName" placeholder="Nombre o apodo" style="min-width:150px;">
+                            <button class="btn btn-accent px-3 fw-bold text-white" onclick="agregarNombre()">+ Agregar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="access-card p-3 rounded border border-secondary-custom bg-dark-custom h-100 d-flex align-items-center">
+                        <div class="w-100">
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control form-control-custom flex-grow-1" id="searchNombre" placeholder="Buscar..." style="min-width:100px;">
+                                <button class="btn btn-accent px-3 fw-bold text-white" onclick="cargarNombres()">🔍</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="nombresList">
+                <div class="text-center text-muted-custom py-5 font-monospace" id="nombresLoading">Cargando...</div>
+            </div>
+        </div>
+    </section>
+
     <footer
         class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
         <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
@@ -123,8 +159,64 @@
             }
         }
 
+        async function cargarNombres() {
+            const container = document.getElementById('nombresList');
+            document.getElementById('nombresLoading').style.display = 'block';
+            try {
+                const res = await fetch(API + '/api/gnp/nombres', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                let docs = await res.json();
+                const q = document.getElementById('searchNombre').value.trim().toLowerCase();
+                if (q) docs = docs.filter(d => d.userId.includes(q) || d.globalName.toLowerCase().includes(q));
+                document.getElementById('nombresLoading').style.display = 'none';
+                if (!docs.length) {
+                    container.innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Sin nombres registrados. Agrega el primer ID arriba.</div>';
+                    return;
+                }
+                container.innerHTML = docs.map(d => `
+                    <div class="project-row p-3 mb-2 d-flex flex-wrap align-items-center gap-2">
+                        <span class="font-monospace fs-7 text-muted-custom" style="min-width:130px;">${d.userId}</span>
+                        <span class="text-white flex-grow-1">${d.globalName}</span>
+                        <button class="btn btn-icon delete" onclick="eliminarNombre('${d.userId}')" title="Eliminar">🗑️</button>
+                    </div>
+                `).join('');
+            } catch {
+                document.getElementById('nombresLoading').textContent = 'Error al cargar.';
+            }
+        }
+
+        async function agregarNombre() {
+            const userId = document.getElementById('inputUserId').value.trim();
+            const globalName = document.getElementById('inputName').value.trim();
+            if (!userId || !globalName) return alert('Completa ambos campos.');
+            try {
+                const res = await fetch(API + '/api/gnp/nombres', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, globalName })
+                });
+                if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                document.getElementById('inputUserId').value = '';
+                document.getElementById('inputName').value = '';
+                cargarNombres();
+            } catch { alert('Error de conexión.'); }
+        }
+
+        async function eliminarNombre(userId) {
+            if (!confirm('Eliminar nombre para ' + userId + '?')) return;
+            try {
+                await fetch(API + '/api/gnp/nombres/' + userId, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                cargarNombres();
+            } catch { alert('Error.'); }
+        }
+
         checkAuth();
         loadProjects();
+        cargarNombres();
     </script>
 </body>
 

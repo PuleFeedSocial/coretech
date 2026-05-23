@@ -60,7 +60,7 @@
             <div class="tab-content-custom" id="tabAsistencias">
                 <div class="table-responsive">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>Quien tomó H50</th><th>Fecha</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th></tr></thead>
                         <tbody id="asistenciasBody"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
@@ -279,7 +279,7 @@
                         <td class="font-monospace">${a.displayName}</td>
                         <td>${a.cuartel.toUpperCase()}</td>
                         <td>${a.horaEntrada}</td><td>${a.horaSalida}</td>
-                        <td>${a.h50MomentoDisplay || a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
+                        <td>${a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
                     </tr>`).join('');
                 }
                 const totalPag = Math.ceil(d.total / d.limit);
