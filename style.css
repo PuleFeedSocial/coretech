@@ -859,6 +859,19 @@ body {
 }
 
 /* ==========================================================================
+   BÚSQUEDA EN DASHBOARD GNP
+   ========================================================================== */
+
+.search-match {
+    background-color: rgba(88, 101, 242, 0.15) !important;
+    border-radius: 4px;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    margin-left: -8px !important;
+    margin-right: -8px !important;
+}
+
+/* ==========================================================================
    BOTÓN FLOTANTE DE SOPORTE (DISCORD)
    ========================================================================== */
 
