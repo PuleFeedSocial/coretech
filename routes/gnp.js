@@ -7,9 +7,11 @@ const getDb = require('../database');
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
 
+function esDiscordId(v) { return /^\d{17,19}$/.test(v); }
+
 async function getCachedNames(userIds) {
   if (!userIds.length) return {};
-  const unique = [...new Set(userIds.filter(Boolean))];
+  const unique = [...new Set(userIds.filter(Boolean))].filter(esDiscordId);
   const docs = await DiscordUser.find({ userId: { $in: unique } });
   const result = {};
   for (const doc of docs) {
@@ -23,7 +25,7 @@ async function backgroundFetch(userIds) {
   if (!DISCORD_TOKEN || warming) return;
   warming = true;
   try {
-    const unique = [...new Set(userIds.filter(Boolean))];
+    const unique = [...new Set(userIds.filter(Boolean))].filter(esDiscordId);
     const allDocs = await DiscordUser.find({ userId: { $in: unique } });
     const cachedIds = new Set();
     for (const doc of allDocs) {
@@ -81,7 +83,7 @@ async function prewarmCache() {
     await conectar();
     const docs = await DataGNP.find({}).maxTimeMS(5000);
     const ids = [];
-    for (const d of docs) if (d.key !== 'config' && d.valor) ids.push(...d.valor);
+    for (const d of docs) if (d.key !== 'config' && Array.isArray(d.valor)) ids.push(...d.valor.filter(esDiscordId));
     if (ids.length) backgroundFetch(ids);
   } catch (e) {
     console.log('[GNP] Prewarm omitido (aún no conectado):', e.message);
