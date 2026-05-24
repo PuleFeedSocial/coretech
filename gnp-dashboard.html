@@ -57,45 +57,45 @@
             </div>
 
             <div class="tab-content-custom" id="tabAsistencias">
-                <div class="table-responsive">
+                <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
                         <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th></tr></thead>
                         <tbody id="asistenciasBody"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
-                    <span class="text-muted-custom font-monospace fs-7" id="asistenciasInfo"></span>
+                    <span class="pagination-info font-monospace" id="asistenciasInfo"></span>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', -1)">◀ Anterior</button>
-                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', 1)">Siguiente ▶</button>
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', -1)">◀ Anterior</button>
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', 1)">Siguiente ▶</button>
                     </div>
                 </div>
             </div>
 
             <div class="tab-content-custom" id="tabH50">
-                <div class="table-responsive">
+                <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
                         <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th></tr></thead>
-                        <tbody id="h50Body"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
+                        <tbody id="h50Body"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
-                    <span class="text-muted-custom font-monospace fs-7" id="h50Info"></span>
+                    <span class="pagination-info font-monospace" id="h50Info"></span>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('h50', -1)">◀ Anterior</button>
-                        <button class="btn btn-outline-secondary-custom px-2 py-1 text-white fs-7" onclick="cambiarPagina('h50', 1)">Siguiente ▶</button>
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('h50', -1)">◀ Anterior</button>
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('h50', 1)">Siguiente ▶</button>
                     </div>
                 </div>
             </div>
 
             <div class="tab-content-custom" id="tabAusencias">
-                <div class="mb-2">
-                    <label class="form-check-label text-muted-custom font-monospace fs-7">
+                <div class="mb-3">
+                    <label class="pagination-info font-monospace" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
                         <input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()">
                         Mostrar solo ausencias activas
                     </label>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
                         <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th></tr></thead>
                         <tbody id="ausenciasBody"><tr><td colspan="3" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>

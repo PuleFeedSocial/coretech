@@ -83,11 +83,32 @@ body {
 .btn-outline-secondary-custom {
     border-color: var(--border-color);
     transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .btn-outline-secondary-custom:hover {
-    background-color: #1c212c;
-    border-color: #3e4756;
+    background-color: rgba(124, 58, 237, 0.15);
+    border-color: var(--accent-color);
+    color: #fff !important;
+}
+
+.pagination-info {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.75rem;
+}
+
+.checkbox-custom {
+    accent-color: var(--accent-color, #7c3aed);
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    cursor: pointer;
+}
+
+.form-check-label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
 }
 
 /* ESTRUCTURA HERO (Mínimo de alto en PC, fluido en móviles) */
@@ -513,31 +534,66 @@ body {
 }
 
 .table-custom {
-    color: #f0f6fc;
+    color: #e2e8f0;
     font-size: 0.85rem;
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.table-custom thead {
+    background: rgba(124, 58, 237, 0.08);
 }
 
 .table-custom th {
-    color: var(--text-muted);
-    font-weight: 600;
-    border-color: var(--border-color);
+    color: var(--accent-color, #a78bfa);
+    font-weight: 700;
+    border: none;
+    border-bottom: 2px solid rgba(124, 58, 237, 0.2);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
+    padding: 12px 14px;
+    white-space: nowrap;
 }
 
 .table-custom td {
-    border-color: var(--border-color);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     vertical-align: middle;
+    padding: 10px 14px;
+    color: #cbd5e1;
 }
 
 .table-custom tbody tr {
     transition: background-color 0.2s ease;
+    background: transparent;
+}
+
+.table-custom tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .table-custom tbody tr:hover {
-    background-color: rgba(124, 58, 237, 0.04);
+    background: rgba(124, 58, 237, 0.08);
+}
+
+.table-custom tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-responsive-custom {
+    background: rgba(15, 15, 25, 0.6);
+    border: 1px solid rgba(124, 58, 237, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+}
+
+.table-responsive-custom .table {
+    margin-bottom: 0;
 }
 
 .badge-role {
@@ -605,6 +661,11 @@ body {
 
 .tab-content-custom {
     display: none;
+    background: rgba(10, 10, 20, 0.4);
+    border: 1px solid rgba(124, 58, 237, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 8px;
 }
 
 .tab-content-custom.active {
