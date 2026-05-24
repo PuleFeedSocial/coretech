@@ -55,13 +55,18 @@ async function backgroundFetch(userIds) {
             if (r.ok) {
               const data = await r.json();
               name = data.global_name || data.username || null;
-            } else { fail++; }
+            } else {
+              console.log(`[GNP] API users/${userId} → ${r.status}`);
+              fail++;
+            }
           }
           if (name) {
             await DiscordUser.updateOne({ userId }, { $set: { globalName: name, updatedAt: new Date() } }, { upsert: true });
             ok++;
           }
-        } catch {} 
+        } catch (e) {
+          console.log(`[GNP] Error fetch ${userId}: ${e.message}`);
+        } 
       }));
       if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 1000));
     }
