@@ -5,6 +5,7 @@ const { authenticate } = require('../middleware/auth');
 const getDb = require('../database');
 
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
 
 async function getCachedNames(userIds) {
   if (!userIds.length) return {};
@@ -35,17 +36,32 @@ async function backgroundFetch(userIds) {
     for (let i = 0; i < toFetch.length; i += 5) {
       await Promise.all(toFetch.slice(i, i + 5).map(async (userId) => {
         try {
-          const r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
-            headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
-          });
-          if (!r.ok) { fail++; return; }
-          const data = await r.json();
-          const name = data.global_name || data.username;
+          let name = null;
+          // 1) Intentar con apodo del servidor (si hay GUILD_ID)
+          if (DISCORD_GUILD_ID) {
+            const g = await fetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/members/${userId}`, {
+              headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+            });
+            if (g.ok) {
+              const member = await g.json();
+              name = member.nick || member.user?.global_name || member.user?.username || null;
+            }
+          }
+          // 2) Fallback a global API
+          if (!name) {
+            const r = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+              headers: { Authorization: `Bot ${DISCORD_TOKEN}` }
+            });
+            if (r.ok) {
+              const data = await r.json();
+              name = data.global_name || data.username || null;
+            } else { fail++; }
+          }
           if (name) {
             await DiscordUser.updateOne({ userId }, { $set: { globalName: name, updatedAt: new Date() } }, { upsert: true });
             ok++;
           }
-        } catch {}
+        } catch {} 
       }));
       if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 1000));
     }
@@ -91,6 +107,7 @@ router.get('/diagnostico', async (req, res) => {
     const result = {
       discordTokenConfigurado: !!DISCORD_TOKEN,
       discordTokenLength: DISCORD_TOKEN ? DISCORD_TOKEN.length : 0,
+      discordGuildId: DISCORD_GUILD_ID || '(no configurado - usa global_name)',
       warming,
       usuariosEnCache: 0
     };
