@@ -534,58 +534,75 @@ body {
 }
 
 .table-custom {
-    color: #e2e8f0;
+    --bs-table-bg: transparent !important;
+    --bs-table-accent-bg: transparent !important;
+    --bs-table-striped-color: #e2e8f0 !important;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02) !important;
+    --bs-table-active-color: #e2e8f0 !important;
+    --bs-table-active-bg: rgba(124, 58, 237, 0.12) !important;
+    --bs-table-hover-color: #e2e8f0 !important;
+    --bs-table-hover-bg: rgba(124, 58, 237, 0.08) !important;
+    color: #e2e8f0 !important;
     font-size: 0.85rem;
-    background: transparent;
+    background: transparent !important;
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
+    margin-bottom: 0;
+    border-color: transparent;
 }
 
 .table-custom thead {
-    background: rgba(124, 58, 237, 0.08);
+    background: rgba(124, 58, 237, 0.08) !important;
 }
 
 .table-custom th {
-    color: var(--accent-color, #a78bfa);
+    color: var(--accent-color, #a78bfa) !important;
     font-weight: 700;
-    border: none;
-    border-bottom: 2px solid rgba(124, 58, 237, 0.2);
+    border: none !important;
+    border-bottom: 2px solid rgba(124, 58, 237, 0.2) !important;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     padding: 12px 14px;
     white-space: nowrap;
+    background: transparent !important;
 }
 
 .table-custom td {
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
     vertical-align: middle;
     padding: 10px 14px;
-    color: #cbd5e1;
+    color: #cbd5e1 !important;
+    background: transparent !important;
 }
 
 .table-custom tbody tr {
     transition: background-color 0.2s ease;
-    background: transparent;
+    background: transparent !important;
 }
 
 .table-custom tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .table-custom tbody tr:hover {
-    background: rgba(124, 58, 237, 0.08);
+    background: rgba(124, 58, 237, 0.08) !important;
 }
 
 .table-custom tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: none !important;
+}
+
+.table-custom td:first-child {
+    font-weight: 500;
+    color: #f1f5f9 !important;
 }
 
 .table-responsive-custom {
-    background: rgba(15, 15, 25, 0.6);
+    background: rgba(8, 8, 18, 0.8) !important;
     border: 1px solid rgba(124, 58, 237, 0.12);
     border-radius: 10px;
     overflow: hidden;
@@ -661,7 +678,7 @@ body {
 
 .tab-content-custom {
     display: none;
-    background: rgba(10, 10, 20, 0.4);
+    background: rgba(5, 5, 15, 0.5);
     border: 1px solid rgba(124, 58, 237, 0.08);
     border-radius: 12px;
     padding: 20px;
