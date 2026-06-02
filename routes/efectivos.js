@@ -3,27 +3,47 @@ const router = express.Router();
 
 const CSV_URL = process.env.GOOGLE_SHEET_CSV_URL;
 
-function parseCSV(text) {
+function splitCSVLines(text) {
   const lines = [];
-  let current = '';
+  let cur = '';
   let inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (inQuotes) {
       if (ch === '"') {
-        if (i + 1 < text.length && text[i + 1] === '"') { current += '"'; i++; }
+        if (i + 1 < text.length && text[i + 1] === '"') { cur += '"'; i++; }
         else inQuotes = false;
-      } else current += ch;
+      } else cur += ch;
     } else {
       if (ch === '"') inQuotes = true;
-      else if (ch === ',') { lines.push(current); current = ''; }
-      else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) { lines.push(current); current = ''; if (ch === '\r') i++; }
-      else if (ch === '\r') { lines.push(current); current = ''; }
-      else current += ch;
+      else if (ch === '\n') { lines.push(cur); cur = ''; }
+      else if (ch === '\r') continue;
+      else cur += ch;
     }
   }
-  if (current) lines.push(current);
+  if (cur) lines.push(cur);
   return lines;
+}
+
+function splitCSVLine(line) {
+  const fields = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = false;
+      } else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { fields.push(cur); cur = ''; }
+      else cur += ch;
+    }
+  }
+  fields.push(cur);
+  return fields;
 }
 
 let cache = null;
@@ -36,31 +56,33 @@ async function fetchSheet() {
   const res = await fetch(CSV_URL);
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const text = await res.text();
-  const fields = parseCSV(text);
+  const lines = splitCSVLines(text);
+  if (lines.length < 2) return [];
 
-  if (fields.length < 10) return [];
-  const totalCols = 10;
-  const headers = fields.slice(0, totalCols).map(h => h.trim());
-  const rows = [];
-  for (let i = totalCols; i + totalCols - 1 < fields.length; i += totalCols) {
+  const headerFields = splitCSVLine(lines[0]);
+  const headers = headerFields.slice(1, 11).map(h => h.trim());
+
+  const result = [];
+  for (let r = 1; r < lines.length; r++) {
+    const line = lines[r].trim();
+    if (!line) continue;
+    const fields = splitCSVLine(line);
     const obj = {};
-    for (let c = 0; c < totalCols; c++) {
-      obj[headers[c]] = (fields[i + c] || '').trim();
+    for (let c = 0; c < 10; c++) {
+      obj[headers[c]] = (fields[1 + c] || '').trim();
     }
-    rows.push(obj);
+    result.push(obj);
   }
 
-  cache = rows;
+  cache = result;
   cacheTime = Date.now();
-  return rows;
+  return result;
 }
 
 router.get('/', async (req, res) => {
   try {
     const data = await fetchSheet();
-    if (!data) {
-      return res.status(503).json({ error: 'Google Sheets CSV no configurado. Falta GOOGLE_SHEET_CSV_URL.' });
-    }
+    if (!data) return res.status(503).json({ error: 'Google Sheets CSV no configurado. Falta GOOGLE_SHEET_CSV_URL.' });
     res.json({ total: data.length, data });
   } catch (err) {
     res.status(500).json({ error: err.message });
