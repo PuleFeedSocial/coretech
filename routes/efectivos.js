@@ -49,13 +49,28 @@ function splitCSVLine(line) {
 let cache = null;
 let cacheTime = 0;
 
+async function fetchWithRedirects(url, maxRedirects = 5) {
+  let currentUrl = url;
+  for (let i = 0; i < maxRedirects; i++) {
+    const res = await fetch(currentUrl, { redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+      currentUrl = new URL(res.headers.get('location'), currentUrl).href;
+      continue;
+    }
+    return res;
+  }
+  return await fetch(currentUrl);
+}
+
 async function fetchSheet() {
   if (cache && Date.now() - cacheTime < 60000) return cache;
   if (!CSV_URL) { cache = null; return null; }
 
-  const res = await fetch(CSV_URL);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const res = await fetchWithRedirects(CSV_URL);
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+
   const text = await res.text();
+
   const lines = splitCSVLines(text);
   if (lines.length < 2) return [];
 
