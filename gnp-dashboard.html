@@ -53,17 +53,15 @@
             </div>
 
             <div class="tab-content-custom active" id="tabCuarteles">
-                <div class="d-flex justify-content-end mb-3">
-                    ${esAdmin ? '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddCuartel()">+ Nuevo cuartel</button>' : ''}
-                </div>
+                <div class="d-flex justify-content-end mb-3" id="cuartelesActions"></div>
                 <div class="row g-3" id="cuartelesGrid"></div>
             </div>
 
             <div class="tab-content-custom" id="tabAsistencias">
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
-                        <tbody id="asistenciasBody"><tr><td colspan="${esAdmin ? 7 : 6}" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th><th id="asisAccionTh" class="d-none">Acción</th></tr></thead>
+                        <tbody id="asistenciasBody"><tr><td colspan="7" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -78,8 +76,8 @@
             <div class="tab-content-custom" id="tabH50">
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
-                        <tbody id="h50Body"><tr><td colspan="${esAdmin ? 7 : 6}" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th><th id="h50AccionTh" class="d-none">Acción</th></tr></thead>
+                        <tbody id="h50Body"><tr><td colspan="7" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -97,12 +95,12 @@
                         <input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()">
                         Mostrar solo ausencias activas
                     </label>
-                    ${esAdmin ? '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddAusencia()">+ Nueva ausencia</button>' : ''}
+                    <div id="ausenciasActions"></div>
                 </div>
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
-                        <tbody id="ausenciasBody"><tr><td colspan="${esAdmin ? 4 : 3}" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th><th id="ausenciasAccionTh" class="d-none">Acción</th></tr></thead>
+                        <tbody id="ausenciasBody"><tr><td colspan="4" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -338,7 +336,7 @@
                 const filtrados = d.data.filter(a => matchFiltro(a.displayName) || matchFiltro(a.userId));
                 const tbody = document.getElementById('asistenciasBody');
                 if (!filtrados.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin resultados') + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="' + (esAdmin ? 7 : 6) + '" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin resultados') + '</td></tr>';
                 } else {
                     tbody.innerHTML = filtrados.map(a => `<tr>
                         <td class="font-monospace">${a.displayName}</td>
@@ -351,7 +349,7 @@
                 const totalPag = Math.ceil(d.total / d.limit);
                 document.getElementById('asistenciasInfo').textContent = `Página ${d.page} de ${totalPag} (${d.total} registros${q() ? ', mostrando ' + filtrados.length : ''})`;
             } catch {
-                document.getElementById('asistenciasBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+                document.getElementById('asistenciasBody').innerHTML = '<tr><td colspan="' + (esAdmin ? 7 : 6) + '" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
             }
         }
 
@@ -384,7 +382,7 @@
                 const totalPag = Math.ceil(d.total / d.limit);
                 document.getElementById('h50Info').textContent = `Página ${d.page} de ${totalPag} (${d.total} registros${q() ? ', mostrando ' + filtrados.length : ''})`;
             } catch {
-                document.getElementById('h50Body').innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+                document.getElementById('h50Body').innerHTML = '<tr><td colspan="' + (esAdmin ? 7 : 6) + '" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
             }
         }
 
@@ -408,12 +406,21 @@
                     </tr>`).join('');
                 }
             } catch {
-                document.getElementById('ausenciasBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+                document.getElementById('ausenciasBody').innerHTML = '<tr><td colspan="' + (esAdmin ? 4 : 3) + '" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
             }
         }
 
         // ---- ADMIN: CRUD helpers ----
         let esAdmin = getUser() && getUser().role === 'admin';
+
+        // Inject admin-only UI elements
+        if (esAdmin) {
+            document.getElementById('cuartelesActions').innerHTML = '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddCuartel()">+ Nuevo cuartel</button>';
+            document.getElementById('ausenciasActions').innerHTML = '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddAusencia()">+ Nueva ausencia</button>';
+            document.getElementById('asisAccionTh').classList.remove('d-none');
+            document.getElementById('h50AccionTh').classList.remove('d-none');
+            document.getElementById('ausenciasAccionTh').classList.remove('d-none');
+        }
 
         function abrirConfirmar(msg, accion) {
             document.getElementById('confirmModalBody').textContent = msg;
