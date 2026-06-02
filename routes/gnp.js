@@ -279,6 +279,144 @@ router.post('/refresh-names', async (req, res) => {
   res.json({ message: `Recarga iniciada para ${[...new Set(ids)].length} usuarios.` });
 });
 
+// ---- CRUD: Cuarteles (admin) ----
+
+async function adminOnly(req, res, next) {
+  const db = await getDb();
+  const user = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
+  if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
+  next();
+}
+
+router.post('/cuarteles', adminOnly, async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+  const key = nombre.toLowerCase().replace(/\s+/g, '_');
+  const existente = await DataGNP.findOne({ key });
+  if (existente) return res.status(409).json({ error: 'El cuartel ya existe' });
+  await DataGNP.create({ key, valor: [] });
+  res.json({ message: 'Cuartel creado', nombre: key });
+});
+
+router.put('/cuarteles/:nombre', adminOnly, async (req, res) => {
+  const nuevo = req.body.nombre;
+  if (!nuevo) return res.status(400).json({ error: 'Nombre requerido' });
+  const oldKey = req.params.nombre.toLowerCase();
+  const newKey = nuevo.toLowerCase().replace(/\s+/g, '_');
+  const doc = await DataGNP.findOne({ key: oldKey });
+  if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
+  await DataGNP.updateOne({ key: oldKey }, { $set: { key: newKey } });
+  res.json({ message: 'Cuartel renombrado', old: oldKey, new: newKey });
+});
+
+router.delete('/cuarteles/:nombre', adminOnly, async (req, res) => {
+  const key = req.params.nombre.toLowerCase();
+  const doc = await DataGNP.findOne({ key });
+  if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
+  await DataGNP.deleteOne({ key });
+  res.json({ message: 'Cuartel eliminado' });
+});
+
+router.post('/cuarteles/:nombre/miembros', adminOnly, async (req, res) => {
+  const { userId } = req.body;
+  if (!userId || !/^\d{17,19}$/.test(userId)) return res.status(400).json({ error: 'userId inválido (debe ser un ID numérico de Discord)' });
+  const key = req.params.nombre.toLowerCase();
+  const doc = await DataGNP.findOne({ key });
+  if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
+  if ((doc.valor || []).includes(userId)) return res.status(409).json({ error: 'El usuario ya está en el cuartel' });
+  await DataGNP.updateOne({ key }, { $push: { valor: userId } });
+  backgroundFetch([userId]);
+  res.json({ message: 'Miembro agregado' });
+});
+
+router.delete('/cuarteles/:nombre/miembros/:userId', adminOnly, async (req, res) => {
+  const key = req.params.nombre.toLowerCase();
+  const { userId } = req.params;
+  const doc = await DataGNP.findOne({ key });
+  if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
+  await DataGNP.updateOne({ key }, { $pull: { valor: userId } });
+  res.json({ message: 'Miembro eliminado' });
+});
+
+// ---- CRUD: Asistencias (admin) ----
+
+router.put('/asistencias/:id', adminOnly, async (req, res) => {
+  const { horaEntrada, horaSalida, cuartel } = req.body;
+  const update = {};
+  if (horaEntrada !== undefined) update.horaEntrada = horaEntrada;
+  if (horaSalida !== undefined) update.horaSalida = horaSalida;
+  if (cuartel !== undefined) update.cuartel = cuartel;
+  const doc = await AsistenciaGNP.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
+  if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  res.json({ message: 'Asistencia actualizada' });
+});
+
+router.delete('/asistencias/:id', adminOnly, async (req, res) => {
+  const doc = await AsistenciaGNP.findByIdAndDelete(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  res.json({ message: 'Asistencia eliminada' });
+});
+
+// ---- CRUD: H50 (admin) ----
+
+router.put('/h50/:id', adminOnly, async (req, res) => {
+  const { minutos, emisor, relegado } = req.body;
+  const update = {};
+  if (minutos !== undefined) update.minutos = parseInt(minutos);
+  if (emisor !== undefined) update.emisor = emisor;
+  if (relegado !== undefined) update.relegado = relegado;
+  const doc = await H50GNP.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
+  if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  res.json({ message: 'H50 actualizado' });
+});
+
+router.delete('/h50/:id', adminOnly, async (req, res) => {
+  const doc = await H50GNP.findByIdAndDelete(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  res.json({ message: 'H50 eliminado' });
+});
+
+// ---- CRUD: Ausencias (admin) ----
+
+router.post('/ausencias', adminOnly, async (req, res) => {
+  const { userId, fechaFin, motivo } = req.body;
+  if (!userId || !fechaFin) return res.status(400).json({ error: 'userId y fechaFin requeridos' });
+  await AusenciaGNP.updateOne(
+    { userId },
+    { $set: { userId, fechaFin: new Date(fechaFin), motivo: motivo || '' } },
+    { upsert: true }
+  );
+  res.json({ message: 'Ausencia guardada' });
+});
+
+router.put('/ausencias/:userId', adminOnly, async (req, res) => {
+  const { fechaFin, motivo } = req.body;
+  const update = {};
+  if (fechaFin) update.fechaFin = new Date(fechaFin);
+  if (motivo !== undefined) update.motivo = motivo;
+  const doc = await AusenciaGNP.findOneAndUpdate({ userId: req.params.userId }, { $set: update });
+  if (!doc) return res.status(404).json({ error: 'Ausencia no encontrada' });
+  res.json({ message: 'Ausencia actualizada' });
+});
+
+router.delete('/ausencias/:userId', adminOnly, async (req, res) => {
+  const doc = await AusenciaGNP.findOneAndDelete({ userId: req.params.userId });
+  if (!doc) return res.status(404).json({ error: 'Ausencia no encontrada' });
+  res.json({ message: 'Ausencia eliminada' });
+});
+
+// ---- CRUD: Perfiles (admin) ----
+
+router.put('/perfiles/:userId', adminOnly, async (req, res) => {
+  const { ultimoAscenso } = req.body;
+  await PerfilGNP.updateOne(
+    { userId: req.params.userId },
+    { $set: { ultimoAscenso: ultimoAscenso ? new Date(ultimoAscenso) : null } },
+    { upsert: true }
+  );
+  res.json({ message: 'Perfil actualizado' });
+});
+
 // ---- Gestión manual de nombres (solo admin) ----
 
 router.get('/nombres', async (req, res) => {

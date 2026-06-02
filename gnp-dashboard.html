@@ -53,14 +53,17 @@
             </div>
 
             <div class="tab-content-custom active" id="tabCuarteles">
+                <div class="d-flex justify-content-end mb-3">
+                    ${esAdmin ? '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddCuartel()">+ Nuevo cuartel</button>' : ''}
+                </div>
                 <div class="row g-3" id="cuartelesGrid"></div>
             </div>
 
             <div class="tab-content-custom" id="tabAsistencias">
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th></tr></thead>
-                        <tbody id="asistenciasBody"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Entrada</th><th>Salida</th><th>H50 Momento</th><th>Fecha</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
+                        <tbody id="asistenciasBody"><tr><td colspan="${esAdmin ? 7 : 6}" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -75,8 +78,8 @@
             <div class="tab-content-custom" id="tabH50">
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th></tr></thead>
-                        <tbody id="h50Body"><tr><td colspan="6" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Cuartel</th><th>Minutos</th><th>Emisor</th><th>Relegado</th><th>Fecha</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
+                        <tbody id="h50Body"><tr><td colspan="${esAdmin ? 7 : 6}" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -89,16 +92,17 @@
             </div>
 
             <div class="tab-content-custom" id="tabAusencias">
-                <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
                     <label class="pagination-info font-monospace" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
                         <input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()">
                         Mostrar solo ausencias activas
                     </label>
+                    ${esAdmin ? '<button class="btn btn-accent btn-sm text-white fw-bold px-3 py-1 fs-7" onclick="mostrarAddAusencia()">+ Nueva ausencia</button>' : ''}
                 </div>
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th></tr></thead>
-                        <tbody id="ausenciasBody"><tr><td colspan="3" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th>${esAdmin ? '<th>Acción</th>' : ''}</tr></thead>
+                        <tbody id="ausenciasBody"><tr><td colspan="${esAdmin ? 4 : 3}" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -119,6 +123,40 @@
                 </div>
                 <div class="modal-footer border-secondary-custom">
                     <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edición Genérica -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace" id="editModalTitle">Editar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editModalBody"></div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-accent text-white fw-bold" id="editModalSave" onclick="guardarEdicion()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmación -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace fs-6">Confirmar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-white-50 fs-7" id="confirmModalBody"></div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-accent text-white fw-bold" id="confirmModalBtn" onclick="confirmAction()">Eliminar</button>
                 </div>
             </div>
         </div>
@@ -200,15 +238,22 @@
                                     <div class="stat-number">${c.cantidad}</div>
                                     <div class="stat-label" style="font-size:1rem;text-transform:none;letter-spacing:0;">${c.nombre.toUpperCase()}</div>
                                 </div>
-                                <span class="stat-icon">🏛️</span>
+                                <div class="d-flex gap-1 align-items-center">
+                                    ${esAdmin ? `<button class="btn-sm-icon" onclick="event.stopPropagation();mostrarRenombrarCuartel('${c.nombre}')" title="Renombrar">✏️</button><button class="btn-sm-icon" onclick="event.stopPropagation();eliminarRegistro('${API}/api/gnp/cuarteles/${c.nombre}',cargarCuarteles)" title="Eliminar">🗑️</button>` : ''}
+                                    <span class="stat-icon">🏛️</span>
+                                </div>
                             </div>
                             <div id="${expandId}" style="display:${autoExpand};" class="mt-3 pt-3 border-top border-secondary-custom">
                                 ${c.miembros.length
                                     ? c.miembros.map(m => `<div class="d-flex justify-content-between align-items-center py-1 ${q() && matchFiltro(m.displayName) ? 'search-match' : ''}">
                                         <span class="font-monospace fs-7 text-muted-custom">${m.displayName}</span>
-                                        <button class="btn-sm-icon" onclick="event.stopPropagation();verMiembro('${m.userId}')">👤</button>
+                                        <div class="d-flex gap-1">
+                                            ${esAdmin ? `<button class="btn-sm-icon" onclick="event.stopPropagation();eliminarRegistro('${API}/api/gnp/cuarteles/${c.nombre}/miembros/${m.userId}',cargarCuarteles)" title="Quitar">➖</button>` : ''}
+                                            <button class="btn-sm-icon" onclick="event.stopPropagation();verMiembro('${m.userId}')">👤</button>
+                                        </div>
                                     </div>`).join('')
                                     : '<span class="text-muted-custom fs-7 font-monospace">Sin personal asignado</span>'}
+                                ${esAdmin ? `<div class="mt-2 pt-2 border-top border-secondary-custom"><button class="btn btn-accent btn-sm w-100 text-white fw-bold fs-7 py-1" onclick="event.stopPropagation();mostrarAddMiembro('${c.nombre}')">+ Agregar miembro</button></div>` : ''}
                             </div>
                         </div>
                     </div>`}).join('');
@@ -300,6 +345,7 @@
                         <td>${a.cuartel.toUpperCase()}</td>
                         <td>${a.horaEntrada}</td><td>${a.horaSalida}</td>
                         <td>${a.h50Momento}</td><td class="font-monospace">${a.fechaString}</td>
+                        ${esAdmin ? `<td class="text-nowrap"><button class="btn-sm-icon" onclick="mostrarEditAsistencia('${a._id}',{horaEntrada:'${a.horaEntrada}',horaSalida:'${a.horaSalida}'})" title="Editar">✏️</button><button class="btn-sm-icon" onclick="eliminarRegistro('${API}/api/gnp/asistencias/${a._id}',cargarAsistencias)" title="Eliminar">🗑️</button></td>` : ''}
                     </tr>`).join('');
                 }
                 const totalPag = Math.ceil(d.total / d.limit);
@@ -324,7 +370,7 @@
                 const filtrados = d.data.filter(x => matchFiltro(x.displayName) || matchFiltro(x.userId) || matchFiltro(x.emisorDisplay || x.emisor) || matchFiltro(x.relegadoDisplay || x.relegado));
                 const tbody = document.getElementById('h50Body');
                 if (!filtrados.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin resultados') + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="' + (esAdmin ? 7 : 6) + '" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin resultados') + '</td></tr>';
                 } else {
                     tbody.innerHTML = filtrados.map(x => `<tr>
                         <td class="font-monospace">${x.displayName}</td>
@@ -332,6 +378,7 @@
                         <td>${Math.floor(x.minutos/60)}h ${x.minutos%60}m</td>
                         <td>${x.emisorDisplay || x.emisor}</td><td>${x.relegadoDisplay || x.relegado}</td>
                         <td class="font-monospace">${x.fechaString}</td>
+                        ${esAdmin ? `<td class="text-nowrap"><button class="btn-sm-icon" onclick="mostrarEditH50('${x._id}',{minutos:${x.minutos},emisor:'${(x.emisor||'').replace(/'/g,"\\'")}',relegado:'${(x.relegado||'').replace(/'/g,"\\'")}'})" title="Editar">✏️</button><button class="btn-sm-icon" onclick="eliminarRegistro('${API}/api/gnp/h50/${x._id}',cargarH50)" title="Eliminar">🗑️</button></td>` : ''}
                     </tr>`).join('');
                 }
                 const totalPag = Math.ceil(d.total / d.limit);
@@ -351,17 +398,170 @@
                 const filtrados = docs.filter(a => matchFiltro(a.displayName) || matchFiltro(a.userId));
                 const tbody = document.getElementById('ausenciasBody');
                 if (!filtrados.length) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin ausencias') + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="' + (esAdmin ? 4 : 3) + '" class="text-center text-muted-custom font-monospace">' + (q() ? 'Sin resultados para "' + q() + '"' : 'Sin ausencias') + '</td></tr>';
                 } else {
                     tbody.innerHTML = filtrados.map(a => `<tr>
                         <td class="font-monospace">${a.displayName}</td>
                         <td class="font-monospace">${new Date(a.fechaFin).toLocaleDateString()}</td>
                         <td>${a.motivo}</td>
+                        ${esAdmin ? `<td class="text-nowrap"><button class="btn-sm-icon" onclick="mostrarEditAusencia('${a.userId}',{fechaFin:'${new Date(a.fechaFin).toISOString().split('T')[0]}',motivo:'${(a.motivo||'').replace(/'/g,"\\'")}'})" title="Editar">✏️</button><button class="btn-sm-icon" onclick="eliminarRegistro('${API}/api/gnp/ausencias/${a.userId}',cargarAusencias)" title="Eliminar">🗑️</button></td>` : ''}
                     </tr>`).join('');
                 }
             } catch {
                 document.getElementById('ausenciasBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
             }
+        }
+
+        // ---- ADMIN: CRUD helpers ----
+        let esAdmin = getUser() && getUser().role === 'admin';
+
+        function abrirConfirmar(msg, accion) {
+            document.getElementById('confirmModalBody').textContent = msg;
+            window._confirmAction = accion;
+            new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        }
+
+        function confirmAction() {
+            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+            if (window._confirmAction) window._confirmAction();
+        }
+
+        function abrirEditar(titulo, html, guardarFn) {
+            document.getElementById('editModalTitle').textContent = titulo;
+            document.getElementById('editModalBody').innerHTML = html;
+            window._guardarEdicion = guardarFn;
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        }
+
+        function guardarEdicion() {
+            bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+            if (window._guardarEdicion) window._guardarEdicion();
+        }
+
+        // --- Cuarteles CRUD ---
+        function mostrarAddCuartel() {
+            abrirEditar('Nuevo Cuartel',
+                '<div class="mb-3"><label class="text-muted-custom fs-7 mb-1">Nombre</label><input class="form-control form-control-custom" id="editInput1"></div>',
+                async () => {
+                    const nombre = document.getElementById('editInput1').value.trim();
+                    if (!nombre) return alert('Nombre requerido');
+                    const res = await fetch(API + '/api/gnp/cuarteles', {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarCuarteles();
+                });
+        }
+
+        function mostrarRenombrarCuartel(nombre) {
+            abrirEditar('Renombrar Cuartel',
+                '<div class="mb-3"><label class="text-muted-custom fs-7 mb-1">Nuevo nombre</label><input class="form-control form-control-custom" id="editInput1" value="' + nombre + '"></div>',
+                async () => {
+                    const nuevo = document.getElementById('editInput1').value.trim();
+                    if (!nuevo) return alert('Nombre requerido');
+                    const res = await fetch(API + '/api/gnp/cuarteles/' + nombre, {
+                        method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: nuevo })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarCuarteles();
+                });
+        }
+
+        function mostrarAddMiembro(nombre) {
+            abrirEditar('Agregar Miembro a ' + nombre.toUpperCase(),
+                '<div class="mb-3"><label class="text-muted-custom fs-7 mb-1">Discord ID numérico</label><input class="form-control form-control-custom" id="editInput1" placeholder="Ej: 1246329263691665541"></div>',
+                async () => {
+                    const userId = document.getElementById('editInput1').value.trim();
+                    if (!userId) return alert('ID requerido');
+                    const res = await fetch(API + '/api/gnp/cuarteles/' + nombre + '/miembros', {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarCuarteles();
+                });
+        }
+
+        // --- Asistencias CRUD ---
+        function mostrarEditAsistencia(id, actual) {
+            abrirEditar('Editar Asistencia',
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Entrada</label><input class="form-control form-control-custom" id="editInput1" value="' + (actual.horaEntrada || '') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Salida</label><input class="form-control form-control-custom" id="editInput2" value="' + (actual.horaSalida || '') + '"></div>',
+                async () => {
+                    const horaEntrada = document.getElementById('editInput1').value.trim();
+                    const horaSalida = document.getElementById('editInput2').value.trim();
+                    const res = await fetch(API + '/api/gnp/asistencias/' + id, {
+                        method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ horaEntrada, horaSalida })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarAsistencias();
+                });
+        }
+
+        // --- H50 CRUD ---
+        function mostrarEditH50(id, actual) {
+            abrirEditar('Editar H50',
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Minutos</label><input class="form-control form-control-custom" id="editInput1" value="' + (actual.minutos || '') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Emisor</label><input class="form-control form-control-custom" id="editInput2" value="' + (actual.emisor || '') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Relegado</label><input class="form-control form-control-custom" id="editInput3" value="' + (actual.relegado || '') + '"></div>',
+                async () => {
+                    const minutos = document.getElementById('editInput1').value.trim();
+                    const emisor = document.getElementById('editInput2').value.trim();
+                    const relegado = document.getElementById('editInput3').value.trim();
+                    const res = await fetch(API + '/api/gnp/h50/' + id, {
+                        method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ minutos, emisor, relegado })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarH50();
+                });
+        }
+
+        // --- Ausencias CRUD ---
+        function mostrarAddAusencia() {
+            abrirEditar('Nueva Ausencia',
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Discord ID</label><input class="form-control form-control-custom" id="editInput1" placeholder="ID numérico"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Fecha fin</label><input class="form-control form-control-custom" id="editInput2" type="date"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Motivo</label><input class="form-control form-control-custom" id="editInput3"></div>',
+                async () => {
+                    const userId = document.getElementById('editInput1').value.trim();
+                    const fechaFin = document.getElementById('editInput2').value;
+                    const motivo = document.getElementById('editInput3').value.trim();
+                    if (!userId || !fechaFin) return alert('ID y fecha requeridos');
+                    const res = await fetch(API + '/api/gnp/ausencias', {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, fechaFin, motivo })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarAusencias();
+                });
+        }
+
+        function mostrarEditAusencia(userId, actual) {
+            abrirEditar('Editar Ausencia de ' + userId,
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Fecha fin</label><input class="form-control form-control-custom" id="editInput1" type="date" value="' + (actual.fechaFin ? actual.fechaFin.split('T')[0] : '') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">Motivo</label><input class="form-control form-control-custom" id="editInput2" value="' + (actual.motivo || '') + '"></div>',
+                async () => {
+                    const fechaFin = document.getElementById('editInput1').value;
+                    const motivo = document.getElementById('editInput2').value.trim();
+                    const res = await fetch(API + '/api/gnp/ausencias/' + userId, {
+                        method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fechaFin, motivo })
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarAusencias();
+                });
+        }
+
+        function eliminarRegistro(url, recargarFn) {
+            abrirConfirmar('¿Eliminar este registro definitivamente?', async () => {
+                const res = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() } });
+                if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                recargarFn();
+            });
         }
 
         function limpiarFiltros() {
