@@ -60,9 +60,6 @@ function updateNavbar() {
       menu.appendChild(dashLink);
     }
 
-    const efectivosLink = createDropdownItem('📋', ' Efectivos', 'efectivos.html');
-    menu.appendChild(efectivosLink);
-
     const settingsLink = createDropdownItem('⚙️', ' Ajustes', 'account-settings.html');
     menu.appendChild(settingsLink);
 

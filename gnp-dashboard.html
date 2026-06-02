@@ -262,7 +262,9 @@
                         <div class="stat-card"><div class="stat-number">${todos.length}</div><div class="stat-label">Cuarteles</div></div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="stat-card"><div class="stat-number">${totalEfectivos}</div><div class="stat-label">Efectivos</div></div>
+                        <a href="efectivos.html" class="text-decoration-none">
+                            <div class="stat-card cursor-pointer transition-opacity" style="transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"><div class="stat-number">${totalEfectivos}</div><div class="stat-label">Efectivos →</div></div>
+                        </a>
                     </div>
                 `;
             } catch {
