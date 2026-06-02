@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreTech Systems - Efectivos</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        th { white-space: nowrap; cursor: pointer; user-select: none; }
+        th .sort-arrow { font-size: 0.65rem; margin-left: 3px; opacity: 0.4; }
+        th.sort-asc .sort-arrow, th.sort-desc .sort-arrow { opacity: 1; }
+        .stats-card { transition: none; }
+        .badge-estatus { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+        .badge-activo { background: rgba(0,200,83,0.2); color: #00c853; }
+        .badge-inactivo { background: rgba(255,82,82,0.2); color: #ff5252; }
+        .badge-default { background: rgba(255,255,255,0.08); color: #aaa; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
+        <div class="container">
+            <a class="navbar-brand font-monospace fw-bold text-accent" href="index.html">
+                <span class="text-white">&lt;</span>CORETECH<span class="text-white">_SYSTEMS&gt;</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav text-center pt-3 pt-lg-0"></ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="dash-section py-4">
+        <div class="container py-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <div class="font-monospace text-accent mb-1 fs-7">[ NOMINA_GENERAL ]</div>
+                    <h2 class="text-white fw-bold mb-0 fs-3">Efectivos</h2>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted-custom font-monospace fs-7" id="totalDisplay"></span>
+                    <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="recargar()" title="Recargar desde Google Sheets">↻</button>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3" id="statsRow"></div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <input type="text" class="form-control form-control-custom" id="searchInput" placeholder="Buscar por nombre, placa, Discord..." style="max-width:350px;" oninput="onSearch()">
+                <select class="form-control form-control-custom" id="filterEstatus" style="max-width:160px;" onchange="onSearch()">
+                    <option value="">Todos los estatus</option>
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                </select>
+                <select class="form-control form-control-custom" id="filterDepto" style="max-width:200px;" onchange="onSearch()">
+                    <option value="">Todos los departamentos</option>
+                </select>
+                <button class="btn btn-outline-secondary-custom px-3 py-1 text-white" onclick="limpiarFiltros()">Limpiar</button>
+            </div>
+
+            <div class="table-responsive table-responsive-custom">
+                <table class="table table-custom mb-0">
+                    <thead><tr id="tableHeaders"></tr></thead>
+                    <tbody id="efectivosBody"><tr><td colspan="11" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="pagination-info font-monospace" id="paginationInfo"></span>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPag(-1)">◀ Anterior</button>
+                    <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPag(1)">Siguiente ▶</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
+        <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const API = '';
+        let allData = [];
+        let filtered = [];
+        let sortKey = null;
+        let sortDir = 1;
+        let page = 1;
+        const perPage = 50;
+
+        const COLUMNS = ['N PLACA', 'NOMBRE IC', 'JERARQUIA', 'DISCORD', 'DEPARTAMENTO', 'FECHA DE INGRESO', 'ESTATUS', 'CASOS ESPECIALES', 'BONOS', 'FECHA DE EGRESO'];
+
+        async function cargarDatos() {
+            const tbody = document.getElementById('efectivosBody');
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Cargando...</td></tr>';
+            try {
+                const res = await fetch(API + '/api/efectivos', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+                if (!res.ok) throw new Error('Error ' + res.status);
+                const d = await res.json();
+                allData = d.data || [];
+                renderHeaders();
+                renderStats();
+                onSearch();
+            } catch {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Error al cargar datos</td></tr>';
+            }
+        }
+
+        function renderHeaders() {
+            const tr = document.getElementById('tableHeaders');
+            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('');
+        }
+
+        function renderStats() {
+            const total = allData.length;
+            const activos = allData.filter(r => r['ESTATUS']?.toUpperCase() === 'ACTIVO').length;
+            const inactivos = total - activos;
+            const deptos = [...new Set(allData.map(r => r['DEPARTAMENTO'] || '').filter(Boolean))].sort();
+            const sel = document.getElementById('filterDepto');
+            sel.innerHTML = '<option value="">Todos los departamentos</option>' + deptos.map(d => '<option value="' + d + '">' + d + '</option>').join('');
+
+            document.getElementById('statsRow').innerHTML = `
+                <div class="col-6 col-md-3"><div class="card bg-dark-secondary border-secondary-custom p-3 text-center"><div class="fs-4 fw-bold text-white">${total}</div><div class="text-muted-custom fs-7">Total efectivos</div></div></div>
+                <div class="col-6 col-md-3"><div class="card bg-dark-secondary border-secondary-custom p-3 text-center"><div class="fs-4 fw-bold text-white">${activos}</div><div class="text-muted-custom fs-7">Activos</div></div></div>
+                <div class="col-6 col-md-3"><div class="card bg-dark-secondary border-secondary-custom p-3 text-center"><div class="fs-4 fw-bold text-white">${inactivos}</div><div class="text-muted-custom fs-7">Inactivos</div></div></div>
+                <div class="col-6 col-md-3"><div class="card bg-dark-secondary border-secondary-custom p-3 text-center"><div class="fs-4 fw-bold text-white">${deptos.length}</div><div class="text-muted-custom fs-7">Departamentos</div></div></div>
+            `;
+        }
+
+        function onSearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const estatusF = document.getElementById('filterEstatus').value.toUpperCase();
+            const deptoF = document.getElementById('filterDepto').value;
+
+            filtered = allData.filter(r => {
+                if (estatusF && r['ESTATUS']?.toUpperCase() !== estatusF) return false;
+                if (deptoF && r['DEPARTAMENTO'] !== deptoF) return false;
+                if (q) {
+                    const vals = Object.values(r).join(' ').toLowerCase();
+                    if (!vals.includes(q)) return false;
+                }
+                return true;
+            });
+
+            if (sortKey) {
+                filtered.sort((a, b) => {
+                    const va = (a[sortKey] || '').toLowerCase();
+                    const vb = (b[sortKey] || '').toLowerCase();
+                    return va.localeCompare(vb, 'es') * sortDir;
+                });
+            }
+
+            page = 1;
+            render();
+        }
+
+        function ordenar(key) {
+            if (sortKey === key) { sortDir *= -1; }
+            else { sortKey = key; sortDir = 1; }
+            renderHeaders();
+            if (filtered.length) {
+                filtered.sort((a, b) => {
+                    const va = (a[sortKey] || '').toLowerCase();
+                    const vb = (b[sortKey] || '').toLowerCase();
+                    return va.localeCompare(vb, 'es') * sortDir;
+                });
+            }
+            render();
+        }
+
+        function render() {
+            const tbody = document.getElementById('efectivosBody');
+            const start = (page - 1) * perPage;
+            const items = filtered.slice(start, start + perPage);
+
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
+            } else {
+                tbody.innerHTML = items.map(r => `<tr>
+                    ${COLUMNS.map(c => {
+                        let val = r[c] || '';
+                        if (c === 'ESTATUS') {
+                            const cls = val.toUpperCase() === 'ACTIVO' ? 'badge-activo' : val.toUpperCase() === 'INACTIVO' ? 'badge-inactivo' : 'badge-default';
+                            return `<td><span class="badge-estatus ${cls}">${val || '—'}</span></td>`;
+                        }
+                        return `<td class="${c === 'NOMBRE IC' || c === 'CASOS ESPECIALES' ? '' : 'font-monospace'}">${val || '—'}</td>`;
+                    }).join('')}
+                </tr>`).join('');
+            }
+
+            const totalPag = Math.ceil(filtered.length / perPage);
+            document.getElementById('totalDisplay').textContent = filtered.length + ' de ' + allData.length + ' registros';
+            document.getElementById('paginationInfo').textContent = 'Página ' + page + ' de ' + (totalPag || 1) + ' (' + filtered.length + ' registros)';
+        }
+
+        function cambiarPag(dir) {
+            const totalPag = Math.ceil(filtered.length / perPage);
+            page = Math.max(1, Math.min(totalPag, page + dir));
+            render();
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterEstatus').value = '';
+            document.getElementById('filterDepto').value = '';
+            onSearch();
+        }
+
+        function recargar() {
+            fetch(API + '/api/efectivos/refresh', { headers: { 'Authorization': 'Bearer ' + getToken() } })
+                .then(r => r.json()).then(() => cargarDatos()).catch(() => cargarDatos());
+        }
+
+        cargarDatos();
+    </script>
+</body>
+</html>
