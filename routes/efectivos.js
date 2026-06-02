@@ -1,21 +1,29 @@
 const express = require('express');
-const { google } = require('googleapis');
 const router = express.Router();
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SHEET_RANGE = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A:J';
+const CSV_URL = process.env.GOOGLE_SHEET_CSV_URL;
 
-function getAuth() {
-  const credsJson = process.env.GOOGLE_CREDENTIALS;
-  if (!credsJson) return null;
-  try {
-    const credentials = JSON.parse(credsJson);
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-    });
-    return auth;
-  } catch { return null; }
+function parseCSV(text) {
+  const lines = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < text.length && text[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = false;
+      } else current += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { lines.push(current); current = ''; }
+      else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) { lines.push(current); current = ''; if (ch === '\r') i++; }
+      else if (ch === '\r') { lines.push(current); current = ''; }
+      else current += ch;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 
 let cache = null;
@@ -23,39 +31,35 @@ let cacheTime = 0;
 
 async function fetchSheet() {
   if (cache && Date.now() - cacheTime < 60000) return cache;
+  if (!CSV_URL) { cache = null; return null; }
 
-  const auth = getAuth();
-  if (!auth) { cache = null; return null; }
+  const res = await fetch(CSV_URL);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  const fields = parseCSV(text);
 
-  const sheets = google.sheets({ version: 'v4', auth });
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: SHEET_RANGE,
-    valueRenderOption: 'FORMATTED_VALUE'
-  });
-
-  const rows = res.data.values || [];
-  if (rows.length < 2) return [];
-
-  const headers = rows[0];
-  const data = rows.slice(1).map(row => {
+  if (fields.length < 10) return [];
+  const totalCols = 10;
+  const headers = fields.slice(0, totalCols).map(h => h.trim());
+  const rows = [];
+  for (let i = totalCols; i + totalCols - 1 < fields.length; i += totalCols) {
     const obj = {};
-    headers.forEach((h, i) => {
-      obj[h.trim()] = (row[i] || '').toString().trim();
-    });
-    return obj;
-  });
+    for (let c = 0; c < totalCols; c++) {
+      obj[headers[c]] = (fields[i + c] || '').trim();
+    }
+    rows.push(obj);
+  }
 
-  cache = data;
+  cache = rows;
   cacheTime = Date.now();
-  return data;
+  return rows;
 }
 
 router.get('/', async (req, res) => {
   try {
     const data = await fetchSheet();
     if (!data) {
-      return res.status(503).json({ error: 'Google Sheets no configurado. Faltan GOOGLE_CREDENTIALS o GOOGLE_SHEET_ID.' });
+      return res.status(503).json({ error: 'Google Sheets CSV no configurado. Falta GOOGLE_SHEET_CSV_URL.' });
     }
     res.json({ total: data.length, data });
   } catch (err) {
