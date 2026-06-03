@@ -217,41 +217,7 @@ router.get('/miembros/:userId', async (req, res) => {
   });
 });
 
-router.get('/expediente/:userId', async (req, res) => {
-  const { userId } = req.params;
-  const timeout = setTimeout(() => res.status(504).json({ error: 'Tiempo de espera agotado' }), 8000);
-  try {
-    const [perfil, ausencia, cuarteles, asistencias, h50, names] = await Promise.all([
-      PerfilGNP.findOne({ userId }).maxTimeMS(5000),
-      AusenciaGNP.findOne({ userId }).maxTimeMS(5000),
-      DataGNP.find({}).maxTimeMS(5000),
-      AsistenciaGNP.find({ userId }).sort({ timestamp: -1 }).limit(100).maxTimeMS(5000),
-      H50GNP.find({ userId }).sort({ timestamp: -1 }).limit(100).maxTimeMS(5000),
-      getCachedNames([userId])
-    ]);
-    clearTimeout(timeout);
-    let cuartelActual = null;
-    for (const c of cuarteles) {
-      if (c.key !== 'config' && (c.valor || []).includes(userId)) {
-        cuartelActual = c.key;
-        break;
-      }
-    }
-    backgroundFetch([userId]);
-    res.json({
-      userId,
-      displayName: names[userId] || userId,
-      cuartelActual,
-      perfil: perfil ? { ultimoAscenso: perfil.ultimoAscenso } : null,
-      ausencia: ausencia ? { fechaFin: ausencia.fechaFin, motivo: ausencia.motivo } : null,
-      asistencias: asistencias.map(a => ({ ...a.toObject(), tipo: 'asistencia' })),
-      h50: h50.map(h => ({ ...h.toObject(), tipo: 'h50' }))
-    });
-  } catch (e) {
-    clearTimeout(timeout);
-    res.status(500).json({ error: e.message });
-  }
-});
+router.get('/asistencias', async (req, res) => {
 
 router.get('/asistencias', async (req, res) => {
   const { userId, cuartel, desde, hasta, page = 1, limit = 50 } = req.query;
