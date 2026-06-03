@@ -98,21 +98,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content bg-dark-secondary border border-secondary-custom">
-                <div class="modal-header border-secondary-custom">
-                    <h5 class="modal-title text-white fw-bold font-monospace fs-6">Confirmar</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-white-50 fs-7" id="confirmModalBody"></div>
-                <div class="modal-footer border-secondary-custom">
-                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-accent text-white fw-bold" onclick="confirmAction()">Eliminar</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="modal fade" id="detailModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -123,6 +108,27 @@
                 </div>
                 <div class="modal-body" id="detailModalBody"></div>
                 <div class="modal-footer border-secondary-custom" id="detailModalFooter"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="bajaModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace fs-6">Dar de Baja</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-white-50 fs-7 mb-2">Agente: <span id="bajaNombre" class="text-white"></span></div>
+                    <label class="text-muted-custom fs-7 mb-1">Fecha de egreso</label>
+                    <input type="date" class="form-control form-control-custom" id="bajaFecha">
+                    <input type="hidden" id="bajaPlaca">
+                </div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-accent text-white fw-bold" onclick="confirmarBaja()">Dar de Baja</button>
+                </div>
             </div>
         </div>
     </div>
@@ -266,18 +272,6 @@
                 .then(r => r.json()).then(() => cargarDatos()).catch(() => cargarDatos());
         }
 
-        // ---- ADMIN CRUD ----
-        function abrirConfirmar(msg, accion) {
-            document.getElementById('confirmModalBody').textContent = msg;
-            window._confirmAction = accion;
-            new bootstrap.Modal(document.getElementById('confirmModal')).show();
-        }
-
-        function confirmAction() {
-            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
-            if (window._confirmAction) window._confirmAction();
-        }
-
         function abrirEditar(titulo, html, guardarFn) {
             document.getElementById('editModalTitle').textContent = titulo;
             document.getElementById('editModalBody').innerHTML = html;
@@ -367,17 +361,43 @@
                 COLUMNS.map(c => `<div class="col-6 col-md-4"><div class="text-muted-custom fs-7 mb-1">${c}</div><div class="text-white font-monospace fs-6">${r[c] || '—'}</div></div>`).join('') +
                 '</div>';
             document.getElementById('detailModalFooter').innerHTML = esAdmin
-                ? '<button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button><button type="button" class="btn btn-accent text-white fw-bold me-2" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();mostrarEdit(\'' + placa + '\')">✏️ Editar</button><button type="button" class="btn btn-outline-danger text-white" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();abrirConfirmar(\'¿Eliminar placa ' + placa + ' (' + (r['NOMBRE IC'] || '') + ')?\',()=>eliminar(\'' + placa + '\'))">🗑️ Eliminar</button>'
+                ? '<button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button><button type="button" class="btn btn-accent text-white fw-bold me-2" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();mostrarEdit(\'' + placa + '\')">✏️ Editar</button><button type="button" class="btn btn-outline-danger text-white" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();abrirBaja(\'' + placa + '\')">Dar de Baja</button>'
                 : '<button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>';
             new bootstrap.Modal(document.getElementById('detailModal')).show();
         }
 
-        async function eliminar(placa) {
-            const res = await fetch(API + '/api/efectivos/' + placa, {
-                method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() }
+        function abrirBaja(placa) {
+            document.getElementById('bajaPlaca').value = placa;
+            document.getElementById('bajaFecha').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bajaNombre').textContent = allData.find(d => d['N° PLACA'] === placa)?.['NOMBRE IC'] || '';
+            new bootstrap.Modal(document.getElementById('bajaModal')).show();
+        }
+
+        function confirmarBaja() {
+            const placa = document.getElementById('bajaPlaca').value;
+            const fecha = document.getElementById('bajaFecha').value;
+            if (!fecha) return alert('Selecciona una fecha de egreso');
+            const r = allData.find(d => d['N° PLACA'] === placa);
+            if (!r) return;
+            fetch(API + '/api/efectivos/' + placa, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: r['NOMBRE IC'] || '',
+                    jerarquia: r['JERARQUÍA'] || '',
+                    discord: r['DISCORD'] || '',
+                    departamento: r['DEPARTAMENTO'] || '',
+                    fechaIngreso: r['FECHA DE INGRESO'] || '',
+                    estatus: 'INACTIVO',
+                    casosEspeciales: r['CASOS ESPECIALES'] || '',
+                    bonos: r['BONOS'] || '',
+                    fechaEgreso: fecha
+                })
+            }).then(res => {
+                bootstrap.Modal.getInstance(document.getElementById('bajaModal')).hide();
+                if (!res.ok) return res.json().then(e => alert(e.error || 'Error'));
+                cargarDatos();
             });
-            if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
-            cargarDatos();
         }
 
         if (esAdmin) document.getElementById('addBtn').style.display = 'inline-block';
