@@ -218,8 +218,6 @@ router.get('/miembros/:userId', async (req, res) => {
 });
 
 router.get('/asistencias', async (req, res) => {
-
-router.get('/asistencias', async (req, res) => {
   const { userId, cuartel, desde, hasta, page = 1, limit = 50 } = req.query;
   const filtro = {};
   if (userId) filtro.userId = userId;
