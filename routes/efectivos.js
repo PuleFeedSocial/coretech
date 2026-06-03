@@ -4,8 +4,6 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SHEET_NAME = process.env.GOOGLE_SHEET_RANGE ? process.env.GOOGLE_SHEET_RANGE.split('!')[0] : 'Sheet1';
-const RANGE = SHEET_NAME + '!A:K';
 
 let _auth = null;
 function getAuth() {
@@ -28,9 +26,24 @@ function sheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
+let _sheetMeta = null;
+async function getSheetName() {
+  if (_sheetMeta) return _sheetMeta;
+  const s = sheets();
+  if (!s) return 'Sheet1';
+  const meta = await s.spreadsheets.get({ spreadsheetId: SHEET_ID, ranges: [] });
+  const name = meta.data.sheets?.[0]?.properties?.title || 'Sheet1';
+  _sheetMeta = name;
+  return name;
+}
+
+async function range(r) {
+  const name = await getSheetName();
+  return name + '!' + r;
+}
+
 const DATA_COLS = 10;
 const HEADER_OFFSET = 1;
-const STATUS_COL = 'A';
 
 let cache = null;
 let cacheTime = 0;
@@ -50,7 +63,7 @@ async function fetchAll(forceRefresh) {
 
   const res = await s.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: RANGE,
+    range: await range('A:K'),
     valueRenderOption: 'FORMATTED_VALUE'
   });
 
@@ -75,7 +88,7 @@ async function findRowIndex(placa) {
   if (!s) return -1;
   const res = await s.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: SHEET_NAME + '!B:B',
+    range: await range('B:B'),
     valueRenderOption: 'FORMATTED_VALUE'
   });
   const values = res.data.values || [];
@@ -98,6 +111,7 @@ router.get('/', async (req, res) => {
 router.get('/refresh', async (req, res) => {
   cache = null;
   cacheTime = 0;
+  _sheetMeta = null;
   try {
     const data = await fetchAll(true);
     res.json({ message: 'Cache renovado', total: data ? data.length : 0 });
@@ -124,7 +138,7 @@ router.post('/', authenticate, async (req, res) => {
 
     await s.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: SHEET_NAME + '!A:K',
+      range: await range('A:K'),
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       resource: { values: [[
@@ -154,7 +168,7 @@ router.put('/:placa', authenticate, async (req, res) => {
 
     await s.spreadsheets.values.update({
       spreadsheetId: SHEET_ID,
-      range: SHEET_NAME + `!B${rowIndex}:K${rowIndex}`,
+      range: await range(`B${rowIndex}:K${rowIndex}`),
       valueInputOption: 'USER_ENTERED',
       resource: { values: [[
         placa, nombre || '', jerarquia || '', discord || '', departamento || '',
@@ -180,12 +194,17 @@ router.delete('/:placa', authenticate, async (req, res) => {
     const s = sheets();
     if (!s) return res.status(503).json({ error: 'Google Sheets no configurado.' });
 
+    const name = await getSheetName();
+    const meta = await s.spreadsheets.get({ spreadsheetId: SHEET_ID, ranges: [] });
+    const sheet = meta.data.sheets.find(sh => sh.properties.title === name);
+    const sheetId = sheet ? sheet.properties.sheetId : 0;
+
     await s.spreadsheets.batchUpdate({
       spreadsheetId: SHEET_ID,
       resource: {
         requests: [{
           deleteDimension: {
-            range: { sheetId: 0, dimension: 'ROWS', startIndex: rowIndex - 1, endIndex: rowIndex }
+            range: { sheetId, dimension: 'ROWS', startIndex: rowIndex - 1, endIndex: rowIndex }
           }
         }]
       }
