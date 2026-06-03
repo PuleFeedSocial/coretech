@@ -129,6 +129,7 @@ router.get('/validations', async (req, res) => {
     const meta = await s.spreadsheets.get({
       spreadsheetId: SHEET_ID,
       ranges: [`${name}!D2:I2`],
+      includeGridData: true,
       fields: 'sheets.data.rowData.values.dataValidation'
     });
 
