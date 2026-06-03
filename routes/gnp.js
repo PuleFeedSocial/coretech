@@ -219,9 +219,15 @@ router.get('/miembros/:userId', async (req, res) => {
 
 router.get('/expediente/:userId', async (req, res) => {
   const { userId } = req.params;
-  const perfil = await PerfilGNP.findOne({ userId });
-  const ausencia = await AusenciaGNP.findOne({ userId });
-  const cuarteles = await DataGNP.find({});
+  const [perfil, ausencia, cuarteles, asistencias, h50, logs, names] = await Promise.all([
+    PerfilGNP.findOne({ userId }),
+    AusenciaGNP.findOne({ userId }),
+    DataGNP.find({}),
+    AsistenciaGNP.find({ userId }).sort({ timestamp: -1 }).limit(100),
+    H50GNP.find({ userId }).sort({ timestamp: -1 }).limit(100),
+    LogGNP.find({ descripcion: { $regex: userId } }).sort({ timestamp: -1 }).limit(50),
+    getCachedNames([userId])
+  ]);
   let cuartelActual = null;
   for (const c of cuarteles) {
     if (c.key !== 'config' && (c.valor || []).includes(userId)) {
@@ -229,10 +235,6 @@ router.get('/expediente/:userId', async (req, res) => {
       break;
     }
   }
-  const asistencias = await AsistenciaGNP.find({ userId }).sort({ timestamp: -1 }).limit(100);
-  const h50 = await H50GNP.find({ userId }).sort({ timestamp: -1 }).limit(100);
-  const logs = await LogGNP.find({ descripcion: { $regex: userId } }).sort({ timestamp: -1 }).limit(50);
-  const names = await getCachedNames([userId]);
   backgroundFetch([userId]);
   res.json({
     userId,

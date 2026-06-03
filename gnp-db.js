@@ -39,6 +39,18 @@ async function conectar() {
   mongoose.connection.on('error', err => console.error('[GNP] Error MongoDB:', err.message));
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 15000 });
   connected = true;
+  crearIndices().catch(e => console.log('[GNP] Índices:', e.message));
+}
+
+async function crearIndices() {
+  await Promise.all([
+    DiscordUser.createIndex({ userId: 1 }),
+    AsistenciaGNP.createIndex({ userId: 1, timestamp: -1 }),
+    H50GNP.createIndex({ userId: 1, timestamp: -1 }),
+    AusenciaGNP.createIndex({ userId: 1 }),
+    PerfilGNP.createIndex({ userId: 1 }),
+    LogGNP.createIndex({ timestamp: -1 })
+  ]);
 }
 
 const DiscordUserSchema = new mongoose.Schema({
