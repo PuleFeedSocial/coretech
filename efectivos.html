@@ -16,6 +16,7 @@
         .badge-activo { background: rgba(0,200,83,0.2); color: #00c853; }
         .badge-inactivo { background: rgba(255,82,82,0.2); color: #ff5252; }
         .badge-default { background: rgba(255,255,255,0.08); color: #aaa; }
+        .col-accion { position: sticky; right: 0; background: rgba(8,8,18,0.95); z-index: 1; }
     </style>
 </head>
 <body>
@@ -147,7 +148,7 @@
 
         function renderHeaders() {
             const tr = document.getElementById('tableHeaders');
-            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('') + (esAdmin ? '<th>Acción</th>' : '');
+            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('') + (esAdmin ? '<th class="col-accion">Acción</th>' : '');
         }
 
         function renderStats() {
@@ -224,7 +225,7 @@
                         }
                         return `<td class="${c === 'NOMBRE IC' || c === 'CASOS ESPECIALES' ? '' : 'font-monospace'}">${val || '—'}</td>`;
                     }).join('')}
-                    ${esAdmin ? `<td class="text-nowrap"><button class="btn-sm-icon" onclick="mostrarEdit('${r['N° PLACA']}')" title="Editar">✏️</button><button class="btn-sm-icon" onclick="abrirConfirmar('¿Eliminar placa ${r['N° PLACA']} (${r['NOMBRE IC']})?',()=>eliminar('${r['N° PLACA']}'))" title="Eliminar">🗑️</button></td>` : ''}
+                    ${esAdmin ? `<td class="text-nowrap col-accion"><button class="btn-sm-icon" onclick="mostrarEdit('${r['N° PLACA']}')" title="Editar">✏️</button><button class="btn-sm-icon" onclick="abrirConfirmar('¿Eliminar placa ${r['N° PLACA']} (${r['NOMBRE IC']})?',()=>eliminar('${r['N° PLACA']}'))" title="Eliminar">🗑️</button></td>` : ''}
                 </tr>`).join('');
             }
 

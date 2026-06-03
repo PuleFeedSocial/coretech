@@ -605,7 +605,7 @@ body {
     background: rgba(8, 8, 18, 0.8) !important;
     border: 1px solid rgba(124, 58, 237, 0.12);
     border-radius: 10px;
-    overflow: hidden;
+    overflow-x: auto;
     backdrop-filter: blur(4px);
 }
 
