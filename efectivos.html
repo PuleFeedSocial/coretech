@@ -43,6 +43,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted-custom font-monospace fs-7" id="totalDisplay"></span>
+                    <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" id="addBtn" style="display:none" onclick="mostrarAdd()">+ Nuevo</button>
                     <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="recargar()" title="Recargar desde Google Sheets">↻</button>
                 </div>
             </div>
@@ -78,6 +79,38 @@
         </div>
     </section>
 
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace" id="editModalTitle">Editar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editModalBody"></div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-accent text-white fw-bold" onclick="guardarEdicion()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace fs-6">Confirmar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-white-50 fs-7" id="confirmModalBody"></div>
+                <div class="modal-footer border-secondary-custom">
+                    <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-accent text-white fw-bold" onclick="confirmAction()">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
         <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
     </footer>
@@ -94,6 +127,7 @@
         const perPage = 50;
 
         const COLUMNS = ['N° PLACA', 'NOMBRE IC', 'JERARQUÍA', 'DISCORD', 'DEPARTAMENTO', 'FECHA DE INGRESO', 'ESTATUS', 'CASOS ESPECIALES', 'BONOS', 'FECHA DE EGRESO'];
+        let esAdmin = getUser() && getUser().role === 'admin';
 
         async function cargarDatos() {
             const tbody = document.getElementById('efectivosBody');
@@ -113,7 +147,7 @@
 
         function renderHeaders() {
             const tr = document.getElementById('tableHeaders');
-            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('');
+            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('') + (esAdmin ? '<th>Acción</th>' : '');
         }
 
         function renderStats() {
@@ -190,6 +224,7 @@
                         }
                         return `<td class="${c === 'NOMBRE IC' || c === 'CASOS ESPECIALES' ? '' : 'font-monospace'}">${val || '—'}</td>`;
                     }).join('')}
+                    ${esAdmin ? `<td class="text-nowrap"><button class="btn-sm-icon" onclick="mostrarEdit('${r['N° PLACA']}')" title="Editar">✏️</button><button class="btn-sm-icon" onclick="abrirConfirmar('¿Eliminar placa ${r['N° PLACA']} (${r['NOMBRE IC']})?',()=>eliminar('${r['N° PLACA']}'))" title="Eliminar">🗑️</button></td>` : ''}
                 </tr>`).join('');
             }
 
@@ -215,6 +250,109 @@
             fetch(API + '/api/efectivos/refresh', { headers: { 'Authorization': 'Bearer ' + getToken() } })
                 .then(r => r.json()).then(() => cargarDatos()).catch(() => cargarDatos());
         }
+
+        // ---- ADMIN CRUD ----
+        function abrirConfirmar(msg, accion) {
+            document.getElementById('confirmModalBody').textContent = msg;
+            window._confirmAction = accion;
+            new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        }
+
+        function confirmAction() {
+            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+            if (window._confirmAction) window._confirmAction();
+        }
+
+        function abrirEditar(titulo, html, guardarFn) {
+            document.getElementById('editModalTitle').textContent = titulo;
+            document.getElementById('editModalBody').innerHTML = html;
+            window._guardarEdicion = guardarFn;
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        }
+
+        function guardarEdicion() {
+            bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+            if (window._guardarEdicion) window._guardarEdicion();
+        }
+
+        function mostrarAdd() {
+            abrirEditar('Nuevo Efectivo',
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">NOMBRE IC *</label><input class="form-control form-control-custom" id="f_nombre"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label><input class="form-control form-control-custom" id="f_jerarquia"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DISCORD</label><input class="form-control form-control-custom" id="f_discord"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label><input class="form-control form-control-custom" id="f_depto"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE INGRESO</label><input class="form-control form-control-custom" id="f_ingreso" type="date"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label><input class="form-control form-control-custom" id="f_estatus"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label><input class="form-control form-control-custom" id="f_casos"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">BONOS</label><input class="form-control form-control-custom" id="f_bonos"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE EGRESO</label><input class="form-control form-control-custom" id="f_egreso" type="date"></div>',
+                async () => {
+                    const body = {
+                        nombre: document.getElementById('f_nombre').value.trim(),
+                        jerarquia: document.getElementById('f_jerarquia').value.trim(),
+                        discord: document.getElementById('f_discord').value.trim(),
+                        departamento: document.getElementById('f_depto').value.trim(),
+                        fechaIngreso: document.getElementById('f_ingreso').value,
+                        estatus: document.getElementById('f_estatus').value.trim(),
+                        casosEspeciales: document.getElementById('f_casos').value.trim(),
+                        bonos: document.getElementById('f_bonos').value.trim(),
+                        fechaEgreso: document.getElementById('f_egreso').value
+                    };
+                    if (!body.nombre) return alert('Nombre requerido');
+                    const res = await fetch(API + '/api/efectivos', {
+                        method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    const r = await res.json();
+                    alert('Agregado con placa ' + r.placa);
+                    cargarDatos();
+                });
+        }
+
+        function mostrarEdit(placa) {
+            const r = allData.find(d => d['N° PLACA'] === placa);
+            if (!r) return alert('No encontrado');
+            abrirEditar('Editar Placa ' + placa,
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">NOMBRE IC</label><input class="form-control form-control-custom" id="f_nombre" value="' + (r['NOMBRE IC'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label><input class="form-control form-control-custom" id="f_jerarquia" value="' + (r['JERARQUÍA'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DISCORD</label><input class="form-control form-control-custom" id="f_discord" value="' + (r['DISCORD'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label><input class="form-control form-control-custom" id="f_depto" value="' + (r['DEPARTAMENTO'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE INGRESO</label><input class="form-control form-control-custom" id="f_ingreso" value="' + (r['FECHA DE INGRESO'] || '') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label><input class="form-control form-control-custom" id="f_estatus" value="' + (r['ESTATUS'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label><input class="form-control form-control-custom" id="f_casos" value="' + (r['CASOS ESPECIALES'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">BONOS</label><input class="form-control form-control-custom" id="f_bonos" value="' + (r['BONOS'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE EGRESO</label><input class="form-control form-control-custom" id="f_egreso" value="' + (r['FECHA DE EGRESO'] || '') + '"></div>',
+                async () => {
+                    const body = {
+                        nombre: document.getElementById('f_nombre').value.trim(),
+                        jerarquia: document.getElementById('f_jerarquia').value.trim(),
+                        discord: document.getElementById('f_discord').value.trim(),
+                        departamento: document.getElementById('f_depto').value.trim(),
+                        fechaIngreso: document.getElementById('f_ingreso').value.trim(),
+                        estatus: document.getElementById('f_estatus').value.trim(),
+                        casosEspeciales: document.getElementById('f_casos').value.trim(),
+                        bonos: document.getElementById('f_bonos').value.trim(),
+                        fechaEgreso: document.getElementById('f_egreso').value.trim()
+                    };
+                    const res = await fetch(API + '/api/efectivos/' + placa, {
+                        method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+                    cargarDatos();
+                });
+        }
+
+        async function eliminar(placa) {
+            const res = await fetch(API + '/api/efectivos/' + placa, {
+                method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
+            cargarDatos();
+        }
+
+        if (esAdmin) document.getElementById('addBtn').style.display = 'inline-block';
 
         cargarDatos();
     </script>
