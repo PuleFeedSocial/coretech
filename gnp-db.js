@@ -39,31 +39,6 @@ async function conectar() {
   mongoose.connection.on('error', err => console.error('[GNP] Error MongoDB:', err.message));
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000, connectTimeoutMS: 15000 });
   connected = true;
-  watchCambios().catch(e => console.log('[GNP] Change streams no disponibles:', e.message));
-}
-
-async function watchCambios() {
-  const models = [
-    { model: DataGNP, tipo: 'cuartel' },
-    { model: AsistenciaGNP, tipo: 'asistencia' },
-    { model: H50GNP, tipo: 'h50' },
-    { model: AusenciaGNP, tipo: 'ausencia' },
-    { model: PerfilGNP, tipo: 'perfil' },
-    { model: DiscordUser, tipo: 'nombre' }
-  ];
-  const conv = { insert: 'crear', update: 'editar', replace: 'editar', delete: 'eliminar' };
-  for (const { model, tipo } of models) {
-    const stream = model.watch([], { fullDocument: 'updateLookup' });
-    stream.on('change', async (change) => {
-      const accion = conv[change.operationType];
-      if (!accion) return;
-      let desc = `${tipo} ${accion}do`;
-      const doc = change.fullDocument;
-      if (doc) desc = doc.userId ? `${tipo}: ${doc.userId}` : doc.key ? `${tipo}: ${doc.key}` : `${tipo}: ${change.documentKey._id}`;
-      try { await LogGNP.create({ tipo, accion, descripcion: desc, autor: 'bot' }); } catch {}
-    });
-    stream.on('error', err => {});
-  }
 }
 
 const DiscordUserSchema = new mongoose.Schema({
