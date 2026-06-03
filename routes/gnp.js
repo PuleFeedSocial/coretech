@@ -217,6 +217,35 @@ router.get('/miembros/:userId', async (req, res) => {
   });
 });
 
+router.get('/expediente/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const perfil = await PerfilGNP.findOne({ userId });
+  const ausencia = await AusenciaGNP.findOne({ userId });
+  const cuarteles = await DataGNP.find({});
+  let cuartelActual = null;
+  for (const c of cuarteles) {
+    if (c.key !== 'config' && (c.valor || []).includes(userId)) {
+      cuartelActual = c.key;
+      break;
+    }
+  }
+  const asistencias = await AsistenciaGNP.find({ userId }).sort({ timestamp: -1 }).limit(100);
+  const h50 = await H50GNP.find({ userId }).sort({ timestamp: -1 }).limit(100);
+  const logs = await LogGNP.find({ descripcion: { $regex: userId } }).sort({ timestamp: -1 }).limit(50);
+  const names = await getCachedNames([userId]);
+  backgroundFetch([userId]);
+  res.json({
+    userId,
+    displayName: names[userId] || userId,
+    cuartelActual,
+    perfil: perfil ? { ultimoAscenso: perfil.ultimoAscenso } : null,
+    ausencia: ausencia ? { fechaFin: ausencia.fechaFin, motivo: ausencia.motivo } : null,
+    asistencias: asistencias.map(a => ({ ...a.toObject(), tipo: 'asistencia' })),
+    h50: h50.map(h => ({ ...h.toObject(), tipo: 'h50' })),
+    logs
+  });
+});
+
 router.get('/asistencias', async (req, res) => {
   const { userId, cuartel, desde, hasta, page = 1, limit = 50 } = req.query;
   const filtro = {};

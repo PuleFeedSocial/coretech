@@ -121,6 +121,7 @@
                     <div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>
                 </div>
                 <div class="modal-footer border-secondary-custom">
+                    <a class="btn btn-accent text-white fw-bold fs-7 px-3 py-1" id="memberExpedienteLink" target="_blank">📋 Expediente</a>
                     <button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
@@ -284,6 +285,7 @@
             const modal = new bootstrap.Modal(document.getElementById('memberModal'));
             document.getElementById('memberModalTitle').textContent = 'Detalle';
             document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>';
+            document.getElementById('memberExpedienteLink').href = 'gnp-expediente.html?userId=' + userId;
             modal.show();
             try {
                 const [infoRes, asisRes, h50Res] = await Promise.all([
