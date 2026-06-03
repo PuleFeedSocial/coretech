@@ -72,9 +72,12 @@
                     <tbody id="efectivosBody"><tr><td colspan="10" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                 </table>
             </div>
-            <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
                 <span class="pagination-info font-monospace" id="paginationInfo"></span>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="text-muted-custom fs-7">Ir a:</span>
+                    <input type="number" class="form-control form-control-custom" id="gotoPage" min="1" style="width:70px;" onkeydown="if(event.key==='Enter')irAPagina()">
+                    <button class="btn btn-outline-secondary-custom text-white fs-7 px-2 py-1" onclick="irAPagina()">Ir</button>
                     <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPag(-1)">◀ Anterior</button>
                     <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPag(1)">Siguiente ▶</button>
                 </div>
@@ -252,12 +255,19 @@
             const totalPag = Math.ceil(filtered.length / perPage);
             document.getElementById('totalDisplay').textContent = filtered.length + ' de ' + allData.length + ' registros';
             document.getElementById('paginationInfo').textContent = 'Página ' + page + ' de ' + (totalPag || 1) + ' (' + filtered.length + ' registros)';
+            document.getElementById('gotoPage').value = '';
         }
 
         function cambiarPag(dir) {
             const totalPag = Math.ceil(filtered.length / perPage);
             page = Math.max(1, Math.min(totalPag, page + dir));
             render();
+        }
+
+        function irAPagina() {
+            const totalPag = Math.ceil(filtered.length / perPage);
+            const val = parseInt(document.getElementById('gotoPage').value);
+            if (val >= 1 && val <= totalPag) { page = val; render(); }
         }
 
         function limpiarFiltros() {
