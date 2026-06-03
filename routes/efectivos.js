@@ -122,28 +122,16 @@ router.get('/refresh', async (req, res) => {
 
 router.get('/validations', async (req, res) => {
   try {
-    const s = sheets();
-    if (!s) return res.status(503).json({ error: 'Google Sheets no configurado.' });
+    const data = await fetchAll(false);
+    if (!data) return res.json({});
 
-    const name = await getSheetName();
-    const meta = await s.spreadsheets.get({
-      spreadsheetId: SHEET_ID,
-      ranges: [`${name}!D2:I2`],
-      includeGridData: true,
-      fields: 'sheets.data.rowData.values.dataValidation'
-    });
-
-    const rowVals = meta.data.sheets?.[0]?.data?.[0]?.rowData?.[0]?.values || [];
-    const map = { JERARQUÍA: 0, DEPARTAMENTO: 2, ESTATUS: 4, 'CASOS ESPECIALES': 5 };
+    const cols = ['JERARQUÍA', 'DEPARTAMENTO', 'ESTATUS', 'CASOS ESPECIALES'];
     const result = {};
 
-    for (const [key, idx] of Object.entries(map)) {
-      const dv = rowVals[idx]?.dataValidation;
-      if (dv?.conditionType === 'ONE_OF_LIST' && dv.values) {
-        result[key] = dv.values.map(v => v.userEnteredValue).filter(Boolean);
-      } else {
-        result[key] = [];
-      }
+    for (const col of cols) {
+      const vals = [...new Set(data.map(r => (r[col] || '').trim()).filter(v => v && v !== '—'))];
+      vals.sort((a, b) => a.localeCompare(b, 'es'));
+      result[col] = vals;
     }
 
     res.json(result);
