@@ -49,7 +49,8 @@ async function crearIndices() {
     H50GNP.createIndex({ userId: 1, timestamp: -1 }),
     AusenciaGNP.createIndex({ userId: 1 }),
     PerfilGNP.createIndex({ userId: 1 }),
-    LogGNP.createIndex({ timestamp: -1 })
+    LogGNP.createIndex({ timestamp: -1 }),
+    LogGNP.createIndex({ tipo: 1, timestamp: 1 })
   ]);
 }
 

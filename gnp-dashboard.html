@@ -286,17 +286,22 @@
             document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Cargando...</div>';
             modal.show();
             try {
-                const [infoRes, asisRes, h50Res] = await Promise.all([
+                const [infoRes, asisRes, h50Res, ascRes] = await Promise.all([
                     fetch(API + '/api/gnp/miembros/' + userId, { headers: { 'Authorization': 'Bearer ' + getToken() } }),
                     fetch(API + '/api/gnp/asistencias?userId=' + userId + '&limit=50', { headers: { 'Authorization': 'Bearer ' + getToken() } }),
-                    fetch(API + '/api/gnp/h50?userId=' + userId + '&limit=50', { headers: { 'Authorization': 'Bearer ' + getToken() } })
+                    fetch(API + '/api/gnp/h50?userId=' + userId + '&limit=50', { headers: { 'Authorization': 'Bearer ' + getToken() } }),
+                    fetch(API + '/api/gnp/ascensos/' + userId, { headers: { 'Authorization': 'Bearer ' + getToken() } })
                 ]);
                 const info = await infoRes.json();
                 const asis = await asisRes.json();
                 const h50 = await h50Res.json();
+                const asc = await ascRes.json();
                 const totalMins = h50.data.reduce((a, c) => a + c.minutos, 0);
                 const ausenciaHtml = info.ausencia
                     ? `<div class="info-row"><span class="info-label">Ausencia</span><span class="info-value">${info.ausencia.motivo} (hasta ${new Date(info.ausencia.fechaFin).toLocaleDateString()})</span></div>`
+                    : '';
+                const ascHtml = asc.data && asc.data.length
+                    ? `<h6 class="section-title mb-2 fs-7 mt-3">📈 Historial de ciclos</h6><div class="table-responsive"><table class="table table-custom mb-0 fs-7"><thead><tr><th>Fecha</th><th>Evento</th><th>Cuartel</th><th>Asistencias</th><th>H50</th></tr></thead><tbody>${asc.data.map(p => `<tr><td class="text-nowrap">${new Date(p.fecha).toLocaleDateString()}</td><td>${p.label}</td><td>${p.cuartel}</td><td>${p.asistencias}</td><td>${Math.floor(p.h50/60)}h ${p.h50%60}m</td></tr>`).join('')}</tbody></table></div>`
                     : '';
                 document.getElementById('memberModalBody').innerHTML = `
                     <div class="settings-card p-3 mb-3">
@@ -319,7 +324,7 @@
                             <thead><tr><th>Fecha</th><th>Tiempo</th><th>Emisor</th><th>Relegado</th></tr></thead>
                             <tbody>${h50.data.length ? h50.data.map(x => `<tr><td>${x.fechaString}</td><td>${Math.floor(x.minutos/60)}h ${x.minutos%60}m</td><td>${x.emisor}</td><td>${x.relegado}</td></tr>`).join('') : '<tr><td colspan="4" class="text-muted-custom">Sin registros</td></tr>'}</tbody>
                         </table>
-                    </div>`;
+                    </div>${ascHtml}`;
             } catch {
                 document.getElementById('memberModalBody').innerHTML = '<div class="text-center text-muted-custom py-4 font-monospace">Error al cargar datos.</div>';
             }

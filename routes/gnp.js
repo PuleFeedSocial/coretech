@@ -287,6 +287,42 @@ router.get('/logs', async (req, res) => {
   res.json({ data: docs, total, page: parseInt(page), limit: parseInt(limit) });
 });
 
+router.get('/ascensos/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const todos = await LogGNP.find({ tipo: 'bot' }).sort({ timestamp: 1 }).maxTimeMS(5000);
+    const events = todos.filter(e => e.descripcion && e.descripcion.includes(userId));
+    const cuarteles = await DataGNP.find({}).maxTimeMS(3000);
+    function cuartelDe(id) { for (const c of cuarteles) if (c.key !== 'config' && Array.isArray(c.valor) && c.valor.includes(id)) return c.key.toUpperCase(); return 'Sin asignar'; }
+    const periods = [];
+    let prev = null;
+    const ingreso = await AsistenciaGNP.findOne({ userId }).sort({ timestamp: 1 }).maxTimeMS(3000);
+    if (ingreso) {
+      const desde = new Date(0);
+      const hasta = events.length ? events[0].timestamp : new Date();
+      const asisAntes = await AsistenciaGNP.countDocuments({ userId, timestamp: { $gte: desde, $lt: hasta } }).maxTimeMS(3000);
+      const h50Antes = await H50GNP.aggregate([{ $match: { userId, timestamp: { $gte: desde, $lt: hasta } } }, { $group: { _id: null, t: { $sum: '$minutos' } } }]).maxTimeMS(3000);
+      periods.push({ fecha: ingreso.timestamp, label: 'Ingreso', cuartel: cuartelDe(userId), asistencias: asisAntes, h50: h50Antes.length ? h50Antes[0].t : 0, descripcion: '' });
+      prev = hasta;
+    }
+    for (const ev of events) {
+      const desde = prev || new Date(0);
+      const hasta = ev.timestamp;
+      const asis = await AsistenciaGNP.countDocuments({ userId, timestamp: { $gte: desde, $lt: hasta } }).maxTimeMS(3000);
+      const h50 = await H50GNP.aggregate([{ $match: { userId, timestamp: { $gte: desde, $lt: hasta } } }, { $group: { _id: null, t: { $sum: '$minutos' } } }]).maxTimeMS(3000);
+      periods.push({ fecha: ev.timestamp, label: ev.accion || 'Ascenso', cuartel: cuartelDe(userId), asistencias: asis, h50: h50.length ? h50[0].t : 0, descripcion: ev.descripcion });
+      prev = hasta;
+    }
+    const desde = prev || new Date(0);
+    const asisAct = await AsistenciaGNP.countDocuments({ userId, timestamp: { $gte: desde } }).maxTimeMS(3000);
+    const h50Act = await H50GNP.aggregate([{ $match: { userId, timestamp: { $gte: desde } } }, { $group: { _id: null, t: { $sum: '$minutos' } } }]).maxTimeMS(3000);
+    if (periods.length) periods.push({ fecha: new Date(), label: 'Actual', cuartel: cuartelDe(userId), asistencias: asisAct, h50: h50Act.length ? h50Act[0].t : 0, descripcion: '' });
+    res.json({ data: periods });
+  } catch (e) {
+    res.json({ data: [], error: e.message });
+  }
+});
+
 setTimeout(prewarmCache, 5000);
 
 router.post('/refresh-names', async (req, res) => {
