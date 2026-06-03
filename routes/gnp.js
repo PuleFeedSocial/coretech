@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser } = require('../gnp-db');
+const { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser, LogGNP } = require('../gnp-db');
 const { authenticate } = require('../middleware/auth');
 const getDb = require('../database');
 
@@ -100,6 +100,14 @@ async function tieneAcceso(userId) {
     if (asignado) return true;
   }
   return false;
+}
+
+async function log(tipo, accion, descripcion, autor) {
+  try {
+    await LogGNP.create({ tipo, accion, descripcion, autor: autor || 'sistema' });
+  } catch (e) {
+    console.log('[GNP] Error al guardar log:', e.message);
+  }
 }
 
 router.get('/diagnostico', async (req, res) => {
@@ -269,6 +277,15 @@ router.get('/ausencias', async (req, res) => {
   res.json(enriched);
 });
 
+router.get('/logs', async (req, res) => {
+  const { page = 1, limit = 50, tipo } = req.query;
+  const filtro = {};
+  if (tipo) filtro.tipo = tipo;
+  const total = await LogGNP.countDocuments(filtro);
+  const docs = await LogGNP.find(filtro).sort({ timestamp: -1 }).skip((page - 1) * limit).limit(parseInt(limit));
+  res.json({ data: docs, total, page: parseInt(page), limit: parseInt(limit) });
+});
+
 setTimeout(prewarmCache, 5000);
 
 router.post('/refresh-names', async (req, res) => {
@@ -295,6 +312,7 @@ router.post('/cuarteles', adminOnly, async (req, res) => {
   const existente = await DataGNP.findOne({ key });
   if (existente) return res.status(409).json({ error: 'El cuartel ya existe' });
   await DataGNP.create({ key, valor: [] });
+  log('cuartel', 'crear', `Cuartel "${key}" creado`, req.user.id);
   res.json({ message: 'Cuartel creado', nombre: key });
 });
 
@@ -306,6 +324,7 @@ router.put('/cuarteles/:nombre', adminOnly, async (req, res) => {
   const doc = await DataGNP.findOne({ key: oldKey });
   if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
   await DataGNP.updateOne({ key: oldKey }, { $set: { key: newKey } });
+  log('cuartel', 'editar', `Cuartel "${oldKey}" renombrado a "${newKey}"`, req.user.id);
   res.json({ message: 'Cuartel renombrado', old: oldKey, new: newKey });
 });
 
@@ -314,6 +333,7 @@ router.delete('/cuarteles/:nombre', adminOnly, async (req, res) => {
   const doc = await DataGNP.findOne({ key });
   if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
   await DataGNP.deleteOne({ key });
+  log('cuartel', 'eliminar', `Cuartel "${key}" eliminado`, req.user.id);
   res.json({ message: 'Cuartel eliminado' });
 });
 
@@ -326,6 +346,7 @@ router.post('/cuarteles/:nombre/miembros', adminOnly, async (req, res) => {
   if ((doc.valor || []).includes(userId)) return res.status(409).json({ error: 'El usuario ya está en el cuartel' });
   await DataGNP.updateOne({ key }, { $push: { valor: userId } });
   backgroundFetch([userId]);
+  log('cuartel', 'editar', `Miembro ${userId} agregado a cuartel "${key}"`, req.user.id);
   res.json({ message: 'Miembro agregado' });
 });
 
@@ -335,6 +356,7 @@ router.delete('/cuarteles/:nombre/miembros/:userId', adminOnly, async (req, res)
   const doc = await DataGNP.findOne({ key });
   if (!doc) return res.status(404).json({ error: 'Cuartel no encontrado' });
   await DataGNP.updateOne({ key }, { $pull: { valor: userId } });
+  log('cuartel', 'editar', `Miembro ${userId} removido de cuartel "${key}"`, req.user.id);
   res.json({ message: 'Miembro eliminado' });
 });
 
@@ -348,12 +370,14 @@ router.put('/asistencias/:id', adminOnly, async (req, res) => {
   if (cuartel !== undefined) update.cuartel = cuartel;
   const doc = await AsistenciaGNP.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
   if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  log('asistencia', 'editar', `Asistencia ${req.params.id} actualizada (userId:${doc.userId})`, req.user.id);
   res.json({ message: 'Asistencia actualizada' });
 });
 
 router.delete('/asistencias/:id', adminOnly, async (req, res) => {
   const doc = await AsistenciaGNP.findByIdAndDelete(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  log('asistencia', 'eliminar', `Asistencia ${req.params.id} eliminada (userId:${doc.userId})`, req.user.id);
   res.json({ message: 'Asistencia eliminada' });
 });
 
@@ -367,12 +391,14 @@ router.put('/h50/:id', adminOnly, async (req, res) => {
   if (relegado !== undefined) update.relegado = relegado;
   const doc = await H50GNP.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
   if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  log('h50', 'editar', `H50 ${req.params.id} actualizado (userId:${doc.userId})`, req.user.id);
   res.json({ message: 'H50 actualizado' });
 });
 
 router.delete('/h50/:id', adminOnly, async (req, res) => {
   const doc = await H50GNP.findByIdAndDelete(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Registro no encontrado' });
+  log('h50', 'eliminar', `H50 ${req.params.id} eliminado (userId:${doc.userId})`, req.user.id);
   res.json({ message: 'H50 eliminado' });
 });
 
@@ -386,6 +412,7 @@ router.post('/ausencias', adminOnly, async (req, res) => {
     { $set: { userId, fechaFin: new Date(fechaFin), motivo: motivo || '' } },
     { upsert: true }
   );
+  log('ausencia', 'crear', `Ausencia creada para userId:${userId} hasta ${fechaFin}`, req.user.id);
   res.json({ message: 'Ausencia guardada' });
 });
 
@@ -396,12 +423,14 @@ router.put('/ausencias/:userId', adminOnly, async (req, res) => {
   if (motivo !== undefined) update.motivo = motivo;
   const doc = await AusenciaGNP.findOneAndUpdate({ userId: req.params.userId }, { $set: update });
   if (!doc) return res.status(404).json({ error: 'Ausencia no encontrada' });
+  log('ausencia', 'editar', `Ausencia de userId:${req.params.userId} actualizada`, req.user.id);
   res.json({ message: 'Ausencia actualizada' });
 });
 
 router.delete('/ausencias/:userId', adminOnly, async (req, res) => {
   const doc = await AusenciaGNP.findOneAndDelete({ userId: req.params.userId });
   if (!doc) return res.status(404).json({ error: 'Ausencia no encontrada' });
+  log('ausencia', 'eliminar', `Ausencia de userId:${req.params.userId} eliminada`, req.user.id);
   res.json({ message: 'Ausencia eliminada' });
 });
 
@@ -414,6 +443,7 @@ router.put('/perfiles/:userId', adminOnly, async (req, res) => {
     { $set: { ultimoAscenso: ultimoAscenso ? new Date(ultimoAscenso) : null } },
     { upsert: true }
   );
+  log('perfil', 'editar', `Perfil de userId:${req.params.userId} actualizado`, req.user.id);
   res.json({ message: 'Perfil actualizado' });
 });
 
@@ -438,6 +468,7 @@ router.post('/nombres', async (req, res) => {
     { $set: { globalName, updatedAt: new Date() } },
     { upsert: true }
   );
+  log('nombre', 'crear', `Nombre "${globalName}" asignado a userId:${userId}`, req.user.id);
   res.json({ message: 'Nombre guardado' });
 });
 
@@ -446,6 +477,7 @@ router.delete('/nombres/:userId', async (req, res) => {
   const user = await db.get('SELECT role FROM users WHERE id = ?', [req.user.id]);
   if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Solo admin' });
   await DiscordUser.deleteOne({ userId: req.params.userId });
+  log('nombre', 'eliminar', `Nombre de userId:${req.params.userId} eliminado`, req.user.id);
   res.json({ message: 'Nombre eliminado' });
 });
 

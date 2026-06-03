@@ -613,29 +613,15 @@ body {
     margin-bottom: 0;
 }
 
+.badge-estatus { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; }
+.badge-activo { background: rgba(0,200,83,0.2); color: #00c853; }
+.badge-inactivo { background: rgba(255,82,82,0.2); color: #ff5252; }
+.badge-default { background: rgba(255,255,255,0.08); color: #aaa; }
+
 .badge-role {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     padding: 3px 10px;
-    border-radius: 4px;
-}
-
-.badge-role.admin {
-    background-color: rgba(124, 58, 237, 0.15);
-    color: var(--accent-color);
-}
-
-.badge-role.user {
-    background-color: rgba(59, 130, 246, 0.12);
-    color: #3b82f6;
-}
-
-.badge-code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    background-color: rgba(124, 58, 237, 0.1);
-    color: var(--accent-color);
-    padding: 2px 8px;
     border-radius: 4px;
     letter-spacing: 2px;
 }

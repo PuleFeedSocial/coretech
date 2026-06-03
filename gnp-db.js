@@ -23,6 +23,15 @@ const PerfilGNP = mongoose.model('PerfilGNP', PerfilSchema);
 const AusenciaSchema = new mongoose.Schema({ userId: { type: String, unique: true }, fechaFin: Date, motivo: String });
 const AusenciaGNP = mongoose.model('AusenciaGNP', AusenciaSchema);
 
+const LogSchema = new mongoose.Schema({
+  tipo: String,
+  accion: String,
+  descripcion: String,
+  autor: String,
+  timestamp: { type: Date, default: Date.now }
+});
+const LogGNP = mongoose.model('LogGNP', LogSchema);
+
 async function conectar() {
   if (connected) return;
   const uri = process.env.MONGO_URI;
@@ -39,4 +48,4 @@ const DiscordUserSchema = new mongoose.Schema({
 });
 const DiscordUser = mongoose.model('DiscordUser', DiscordUserSchema);
 
-module.exports = { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser };
+module.exports = { conectar, DataGNP, AsistenciaGNP, H50GNP, PerfilGNP, AusenciaGNP, DiscordUser, LogGNP };

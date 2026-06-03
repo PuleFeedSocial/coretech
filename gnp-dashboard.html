@@ -50,6 +50,7 @@
                 <button class="tab-btn" onclick="switchTab('asistencias', this)">📝 Asistencias</button>
                 <button class="tab-btn" onclick="switchTab('h50', this)">⏱️ H50</button>
                 <button class="tab-btn" onclick="switchTab('ausencias', this)">✈️ Ausencias</button>
+                <button class="tab-btn" onclick="switchTab('logs', this)">📋 Bitácora</button>
             </div>
 
             <div class="tab-content-custom active" id="tabCuarteles">
@@ -89,19 +90,19 @@
                 </div>
             </div>
 
-            <div class="tab-content-custom" id="tabAusencias">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <label class="pagination-info font-monospace" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-                        <input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()">
-                        Mostrar solo ausencias activas
-                    </label>
-                    <div id="ausenciasActions"></div>
-                </div>
+            <div class="tab-content-custom" id="tabLogs">
                 <div class="table-responsive table-responsive-custom">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Nombre</th><th>Fecha fin</th><th>Motivo</th><th id="ausenciasAccionTh" class="d-none">Acción</th></tr></thead>
-                        <tbody id="ausenciasBody"><tr><td colspan="4" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Acción</th><th>Descripción</th><th>Autor</th></tr></thead>
+                        <tbody id="logsBody"><tr><td colspan="5" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                     </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="pagination-info font-monospace" id="logsInfo"></span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('logs', -1)">◀ Anterior</button>
+                        <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('logs', 1)">Siguiente ▶</button>
+                    </div>
                 </div>
             </div>
 
@@ -168,7 +169,7 @@
     <script src="auth.js"></script>
     <script>
         const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
-        let paginas = { asistencias: 1, h50: 1 };
+        let paginas = { asistencias: 1, h50: 1, logs: 1 };
         let searchTimeout;
 
         function debounceSearch() {
@@ -412,6 +413,33 @@
             }
         }
 
+        async function cargarLogs() {
+            const page = paginas.logs || 1;
+            try {
+                const res = await fetch(API + '/api/gnp/logs?page=' + page + '&limit=30', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if (!res.ok) throw new Error();
+                const d = await res.json();
+                const tbody = document.getElementById('logsBody');
+                if (!d.data.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted-custom font-monospace">Sin registros</td></tr>';
+                } else {
+                    tbody.innerHTML = d.data.map(l => `<tr>
+                        <td class="font-monospace text-nowrap">${new Date(l.timestamp).toLocaleString()}</td>
+                        <td><span class="badge-estatus ${l.tipo === 'cuartel' ? 'badge-activo' : l.tipo === 'ausencia' ? 'badge-inactivo' : 'badge-default'}">${l.tipo}</span></td>
+                        <td class="font-monospace">${l.accion}</td>
+                        <td>${l.descripcion}</td>
+                        <td class="font-monospace">${l.autor}</td>
+                    </tr>`).join('');
+                }
+                const totalPag = Math.ceil(d.total / d.limit);
+                document.getElementById('logsInfo').textContent = 'Página ' + d.page + ' de ' + (totalPag || 1) + ' (' + d.total + ' registros)';
+            } catch {
+                document.getElementById('logsBody').innerHTML = '<tr><td colspan="5" class="text-center text-muted-custom font-monospace">Error al cargar</td></tr>';
+            }
+        }
+
         // ---- ADMIN: CRUD helpers ----
         let esAdmin = getUser() && getUser().role === 'admin';
 
@@ -585,26 +613,30 @@
             if (tab.includes('Asistencias')) cargarAsistencias();
             if (tab.includes('H50')) cargarH50();
             if (tab.includes('Ausencias')) cargarAusencias();
+            if (tab.includes('Logs')) cargarLogs();
         }
 
         function cambiarPagina(tab, dir) {
             paginas[tab] = Math.max(1, paginas[tab] + dir);
             if (tab === 'asistencias') cargarAsistencias();
             if (tab === 'h50') cargarH50();
+            if (tab === 'logs') cargarLogs();
         }
 
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab-content-custom').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            const map = { cuarteles: 'tabCuarteles', asistencias: 'tabAsistencias', h50: 'tabH50', ausencias: 'tabAusencias' };
+            const map = { cuarteles: 'tabCuarteles', asistencias: 'tabAsistencias', h50: 'tabH50', ausencias: 'tabAusencias', logs: 'tabLogs' };
             document.getElementById(map[tab]).classList.add('active');
             btn.classList.add('active');
             paginas.asistencias = 1;
             paginas.h50 = 1;
+            paginas.logs = 1;
             if (tab === 'cuarteles') cargarCuarteles();
             if (tab === 'asistencias') cargarAsistencias();
             if (tab === 'h50') cargarH50();
             if (tab === 'ausencias') cargarAusencias();
+            if (tab === 'logs') cargarLogs();
         }
 
         checkAuth();
