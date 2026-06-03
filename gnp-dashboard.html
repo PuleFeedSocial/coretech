@@ -50,7 +50,7 @@
                 <button class="tab-btn" onclick="switchTab('asistencias', this)">📝 Asistencias</button>
                 <button class="tab-btn" onclick="switchTab('h50', this)">⏱️ H50</button>
                 <button class="tab-btn" onclick="switchTab('ausencias', this)">✈️ Ausencias</button>
-                <button class="tab-btn" onclick="switchTab('logs', this)">📋 Bitácora</button>
+                <button class="tab-btn" onclick="switchTab('logs', this)">📋 Logs</button>
             </div>
 
             <div class="tab-content-custom active" id="tabCuarteles">
@@ -414,6 +414,8 @@
             }
         }
 
+        let logsInterval;
+
         async function cargarLogs() {
             const page = paginas.logs || 1;
             try {
@@ -633,11 +635,12 @@
             paginas.asistencias = 1;
             paginas.h50 = 1;
             paginas.logs = 1;
+            clearInterval(logsInterval);
             if (tab === 'cuarteles') cargarCuarteles();
             if (tab === 'asistencias') cargarAsistencias();
             if (tab === 'h50') cargarH50();
             if (tab === 'ausencias') cargarAusencias();
-            if (tab === 'logs') cargarLogs();
+            if (tab === 'logs') { cargarLogs(); logsInterval = setInterval(cargarLogs, 5000); }
         }
 
         checkAuth();

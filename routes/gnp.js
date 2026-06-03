@@ -6,6 +6,7 @@ const getDb = require('../database');
 
 const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
+const LOG_WEBHOOK_SECRET = process.env.LOG_WEBHOOK_SECRET || 'coretech-log-secret-2026';
 
 function esDiscordId(v) { return /^\d{17,19}$/.test(v); }
 
@@ -294,6 +295,13 @@ router.post('/refresh-names', async (req, res) => {
   for (const d of docs) if (d.key !== 'config' && d.valor) ids.push(...d.valor);
   backgroundFetch(ids);
   res.json({ message: `Recarga iniciada para ${[...new Set(ids)].length} usuarios.` });
+});
+
+router.post('/webhook-log', async (req, res) => {
+  const { secret, titulo, descripcion, color, autor } = req.body;
+  if (secret !== LOG_WEBHOOK_SECRET) return res.status(401).json({ error: 'No autorizado' });
+  log('bot', titulo || 'Evento', descripcion || '', autor || 'bot');
+  res.json({ message: 'Log registrado' });
 });
 
 // ---- CRUD: Cuarteles (admin) ----
