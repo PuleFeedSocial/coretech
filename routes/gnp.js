@@ -219,13 +219,12 @@ router.get('/miembros/:userId', async (req, res) => {
 
 router.get('/expediente/:userId', async (req, res) => {
   const { userId } = req.params;
-  const [perfil, ausencia, cuarteles, asistencias, h50, logs, names] = await Promise.all([
+  const [perfil, ausencia, cuarteles, asistencias, h50, names] = await Promise.all([
     PerfilGNP.findOne({ userId }),
     AusenciaGNP.findOne({ userId }),
     DataGNP.find({}),
     AsistenciaGNP.find({ userId }).sort({ timestamp: -1 }).limit(100),
     H50GNP.find({ userId }).sort({ timestamp: -1 }).limit(100),
-    LogGNP.find({ descripcion: { $regex: userId } }).sort({ timestamp: -1 }).limit(50),
     getCachedNames([userId])
   ]);
   let cuartelActual = null;
@@ -243,8 +242,7 @@ router.get('/expediente/:userId', async (req, res) => {
     perfil: perfil ? { ultimoAscenso: perfil.ultimoAscenso } : null,
     ausencia: ausencia ? { fechaFin: ausencia.fechaFin, motivo: ausencia.motivo } : null,
     asistencias: asistencias.map(a => ({ ...a.toObject(), tipo: 'asistencia' })),
-    h50: h50.map(h => ({ ...h.toObject(), tipo: 'h50' })),
-    logs
+    h50: h50.map(h => ({ ...h.toObject(), tipo: 'h50' }))
   });
 });
 
