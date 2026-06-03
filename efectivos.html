@@ -154,6 +154,13 @@
 
         const COLUMNS = ['N° PLACA', 'NOMBRE IC', 'JERARQUÍA', 'DISCORD', 'DEPARTAMENTO', 'FECHA DE INGRESO', 'ESTATUS', 'CASOS ESPECIALES', 'BONOS', 'FECHA DE EGRESO'];
         let esAdmin = getUser() && getUser().role === 'admin';
+        let valOptions = {};
+
+        function sel(id, current, options) {
+            if (!options || !options.length) return `<input class="form-control form-control-custom" id="${id}" value="${(current||'').replace(/"/g,'&quot;')}">`;
+            const esc = v => (v||'').replace(/"/g,'&quot;');
+            return `<select class="form-control form-control-custom" id="${id}"><option value="">—</option>${options.map(o => `<option value="${esc(o)}"${(current||'').toUpperCase()===o.toUpperCase()?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
+        }
 
         async function cargarDatos() {
             const tbody = document.getElementById('efectivosBody');
@@ -301,12 +308,12 @@
         function mostrarAdd() {
             abrirEditar('Nuevo Efectivo',
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">NOMBRE IC *</label><input class="form-control form-control-custom" id="f_nombre"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label><input class="form-control form-control-custom" id="f_jerarquia"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label>' + sel('f_jerarquia', '', valOptions['JERARQUÍA']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DISCORD</label><input class="form-control form-control-custom" id="f_discord"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label><input class="form-control form-control-custom" id="f_depto"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label>' + sel('f_depto', '', valOptions['DEPARTAMENTO']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE INGRESO</label><input class="form-control form-control-custom" id="f_ingreso" type="date"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label><input class="form-control form-control-custom" id="f_estatus"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label><input class="form-control form-control-custom" id="f_casos"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label>' + sel('f_estatus', '', valOptions['ESTATUS']) + '</div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label>' + sel('f_casos', '', valOptions['CASOS ESPECIALES']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">BONOS</label><input class="form-control form-control-custom" id="f_bonos"></div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE EGRESO</label><input class="form-control form-control-custom" id="f_egreso" type="date"></div>',
                 async () => {
@@ -338,12 +345,12 @@
             if (!r) return alert('No encontrado');
             abrirEditar('Editar Placa ' + placa,
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">NOMBRE IC</label><input class="form-control form-control-custom" id="f_nombre" value="' + (r['NOMBRE IC'] || '').replace(/"/g, '&quot;') + '"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label><input class="form-control form-control-custom" id="f_jerarquia" value="' + (r['JERARQUÍA'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">JERARQUÍA</label>' + sel('f_jerarquia', r['JERARQUÍA'] || '', valOptions['JERARQUÍA']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DISCORD</label><input class="form-control form-control-custom" id="f_discord" value="' + (r['DISCORD'] || '').replace(/"/g, '&quot;') + '"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label><input class="form-control form-control-custom" id="f_depto" value="' + (r['DEPARTAMENTO'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">DEPARTAMENTO</label>' + sel('f_depto', r['DEPARTAMENTO'] || '', valOptions['DEPARTAMENTO']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE INGRESO</label><input class="form-control form-control-custom" id="f_ingreso" value="' + (r['FECHA DE INGRESO'] || '') + '"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label><input class="form-control form-control-custom" id="f_estatus" value="' + (r['ESTATUS'] || '').replace(/"/g, '&quot;') + '"></div>' +
-                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label><input class="form-control form-control-custom" id="f_casos" value="' + (r['CASOS ESPECIALES'] || '').replace(/"/g, '&quot;') + '"></div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">ESTATUS</label>' + sel('f_estatus', r['ESTATUS'] || '', valOptions['ESTATUS']) + '</div>' +
+                '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">CASOS ESPECIALES</label>' + sel('f_casos', r['CASOS ESPECIALES'] || '', valOptions['CASOS ESPECIALES']) + '</div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">BONOS</label><input class="form-control form-control-custom" id="f_bonos" value="' + (r['BONOS'] || '').replace(/"/g, '&quot;') + '"></div>' +
                 '<div class="mb-2"><label class="text-muted-custom fs-7 mb-1">FECHA DE EGRESO</label><input class="form-control form-control-custom" id="f_egreso" value="' + (r['FECHA DE EGRESO'] || '') + '"></div>',
                 async () => {
@@ -416,6 +423,7 @@
 
         if (esAdmin) document.getElementById('addBtn').style.display = 'inline-block';
 
+        fetch(API + '/api/efectivos/validations').then(r => r.json()).then(d => { valOptions = d; }).catch(() => {});
         cargarDatos();
     </script>
 </body>

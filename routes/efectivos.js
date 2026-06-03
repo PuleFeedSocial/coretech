@@ -120,6 +120,37 @@ router.get('/refresh', async (req, res) => {
   }
 });
 
+router.get('/validations', async (req, res) => {
+  try {
+    const s = sheets();
+    if (!s) return res.status(503).json({ error: 'Google Sheets no configurado.' });
+
+    const name = await getSheetName();
+    const meta = await s.spreadsheets.get({
+      spreadsheetId: SHEET_ID,
+      ranges: [`${name}!D2:I2`],
+      fields: 'sheets.data.rowData.values.dataValidation'
+    });
+
+    const rowVals = meta.data.sheets?.[0]?.data?.[0]?.rowData?.[0]?.values || [];
+    const map = { JERARQUÍA: 0, DEPARTAMENTO: 2, ESTATUS: 4, 'CASOS ESPECIALES': 5 };
+    const result = {};
+
+    for (const [key, idx] of Object.entries(map)) {
+      const dv = rowVals[idx]?.dataValidation;
+      if (dv?.conditionType === 'ONE_OF_LIST' && dv.values) {
+        result[key] = dv.values.map(v => v.userEnteredValue).filter(Boolean);
+      } else {
+        result[key] = [];
+      }
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/', authenticate, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Solo administradores' });
