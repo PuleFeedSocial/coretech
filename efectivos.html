@@ -59,6 +59,7 @@
                     <option value="">Todos los estatus</option>
                     <option value="ACTIVO">Activo</option>
                     <option value="INACTIVO">Inactivo</option>
+                    <option value="BAJA">Baja</option>
                 </select>
                 <select class="form-control form-control-custom" id="filterDepto" style="max-width:200px;" onchange="onSearch()">
                     <option value="">Todos los departamentos</option>
@@ -176,9 +177,12 @@
         }
 
         function renderStats() {
-            const total = allData.length;
+            const total = allData.filter(r => {
+                const n = (r['NOMBRE IC'] || '').trim().toUpperCase();
+                return n && n !== 'SIN DATOS' && n !== '(NADA)' && n !== '—';
+            }).length;
             const activos = allData.filter(r => r['ESTATUS']?.toUpperCase() === 'ACTIVO').length;
-            const inactivos = total - activos;
+            const inactivos = allData.filter(r => ['INACTIVO', 'BAJA'].includes(r['ESTATUS']?.toUpperCase())).length;
             const deptos = [...new Set(allData.map(r => r['DEPARTAMENTO'] || '').filter(Boolean))].sort();
             const sel = document.getElementById('filterDepto');
             sel.innerHTML = '<option value="">Todos los departamentos</option>' + deptos.map(d => '<option value="' + d + '">' + d + '</option>').join('');
