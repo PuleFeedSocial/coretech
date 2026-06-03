@@ -177,8 +177,9 @@
             searchTimeout = setTimeout(() => {
                 const t = document.querySelector('.tab-btn.active');
                 const tab = t ? t.textContent.trim() : 'Cuarteles';
-                paginas.asistencias = 1;
-                paginas.h50 = 1;
+            paginas.asistencias = 1;
+            paginas.h50 = 1;
+            paginas.logs = 1;
                 if (tab.includes('Cuarteles')) cargarCuarteles();
                 if (tab.includes('Asistencias')) cargarAsistencias();
                 if (tab.includes('H50')) cargarH50();
