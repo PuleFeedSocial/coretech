@@ -17,6 +17,8 @@
         .badge-inactivo { background: rgba(255,82,82,0.2); color: #ff5252; }
         .badge-default { background: rgba(255,255,255,0.08); color: #aaa; }
         .col-accion { position: sticky; right: 0; background: rgba(8,8,18,0.95); z-index: 1; }
+        .fila-efectivo { cursor: pointer; transition: background .15s; }
+        .fila-efectivo:hover { background: rgba(124,58,237,0.08) !important; }
     </style>
 </head>
 <body>
@@ -67,7 +69,7 @@
             <div class="table-responsive table-responsive-custom">
                 <table class="table table-custom mb-0">
                     <thead><tr id="tableHeaders"></tr></thead>
-                    <tbody id="efectivosBody"><tr><td colspan="11" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                    <tbody id="efectivosBody"><tr><td colspan="10" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                 </table>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3">
@@ -112,6 +114,19 @@
         </div>
     </div>
 
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark-secondary border border-secondary-custom">
+                <div class="modal-header border-secondary-custom">
+                    <h5 class="modal-title text-white fw-bold font-monospace" id="detailModalTitle">Detalle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailModalBody"></div>
+                <div class="modal-footer border-secondary-custom" id="detailModalFooter"></div>
+            </div>
+        </div>
+    </div>
+
     <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
         <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
     </footer>
@@ -132,7 +147,7 @@
 
         async function cargarDatos() {
             const tbody = document.getElementById('efectivosBody');
-            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Cargando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted-custom font-monospace">Cargando...</td></tr>';
             try {
                 const res = await fetch(API + '/api/efectivos', { headers: { 'Authorization': 'Bearer ' + getToken() } });
                 if (!res.ok) throw new Error('Error ' + res.status);
@@ -142,13 +157,13 @@
                 renderStats();
                 onSearch();
             } catch {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Error al cargar datos</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted-custom font-monospace">Error al cargar datos</td></tr>';
             }
         }
 
         function renderHeaders() {
             const tr = document.getElementById('tableHeaders');
-            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('') + (esAdmin ? '<th class="col-accion">Acción</th>' : '');
+            tr.innerHTML = COLUMNS.map(c => `<th onclick="ordenar('${c}')">${c}<span class="sort-arrow">${sortKey === c ? (sortDir === 1 ? '▲' : '▼') : '▲'}</span></th>`).join('');
         }
 
         function renderStats() {
@@ -214,9 +229,9 @@
             const items = filtered.slice(start, start + perPage);
 
             if (!items.length) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr>';
             } else {
-                tbody.innerHTML = items.map(r => `<tr>
+                tbody.innerHTML = items.map(r => `<tr class="fila-efectivo" onclick="verDetalle('${r['N° PLACA']}')">
                     ${COLUMNS.map(c => {
                         let val = r[c] || '';
                         if (c === 'ESTATUS') {
@@ -225,7 +240,6 @@
                         }
                         return `<td class="${c === 'NOMBRE IC' || c === 'CASOS ESPECIALES' ? '' : 'font-monospace'}">${val || '—'}</td>`;
                     }).join('')}
-                    ${esAdmin ? `<td class="text-nowrap col-accion"><button class="btn-sm-icon" onclick="mostrarEdit('${r['N° PLACA']}')" title="Editar">✏️</button><button class="btn-sm-icon" onclick="abrirConfirmar('¿Eliminar placa ${r['N° PLACA']} (${r['NOMBRE IC']})?',()=>eliminar('${r['N° PLACA']}'))" title="Eliminar">🗑️</button></td>` : ''}
                 </tr>`).join('');
             }
 
@@ -343,6 +357,19 @@
                     if (!res.ok) { const e = await res.json(); return alert(e.error || 'Error'); }
                     cargarDatos();
                 });
+        }
+
+        function verDetalle(placa) {
+            const r = allData.find(d => d['N° PLACA'] === placa);
+            if (!r) return;
+            document.getElementById('detailModalTitle').textContent = 'Placa ' + placa + ' — ' + (r['NOMBRE IC'] || '');
+            document.getElementById('detailModalBody').innerHTML = '<div class="row g-3">' +
+                COLUMNS.map(c => `<div class="col-6 col-md-4"><div class="text-muted-custom fs-7 mb-1">${c}</div><div class="text-white font-monospace fs-6">${r[c] || '—'}</div></div>`).join('') +
+                '</div>';
+            document.getElementById('detailModalFooter').innerHTML = esAdmin
+                ? '<button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button><button type="button" class="btn btn-accent text-white fw-bold me-2" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();mostrarEdit(\'' + placa + '\')">✏️ Editar</button><button type="button" class="btn btn-outline-danger text-white" onclick="bootstrap.Modal.getInstance(document.getElementById(\'detailModal\')).hide();abrirConfirmar(\'¿Eliminar placa ' + placa + ' (' + (r['NOMBRE IC'] || '') + ')?\',()=>eliminar(\'' + placa + '\'))">🗑️ Eliminar</button>'
+                : '<button type="button" class="btn btn-outline-secondary-custom text-white" data-bs-dismiss="modal">Cerrar</button>';
+            new bootstrap.Modal(document.getElementById('detailModal')).show();
         }
 
         async function eliminar(placa) {
