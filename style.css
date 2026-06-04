@@ -1048,4 +1048,122 @@ body {
         right: -50px;
         /* Reducimos el glow para que no sature pantallas chicas */
     }
+
+    .code-digit {
+        width: 36px !important;
+        height: 44px !important;
+        font-size: 1.2rem !important;
+    }
+    .code-input-group {
+        gap: 6px !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .table-custom th,
+    .table-custom td {
+        padding: 8px 10px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    .stat-number {
+        font-size: 1.6rem;
+    }
+    .settings-card {
+        padding: 20px;
+    }
+    .dash-section .tab-btn {
+        font-size: 0.75rem;
+        padding: 8px 14px;
+    }
+    #searchUserId {
+        max-width: 100% !important;
+    }
+    .tab-content-custom {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .table-custom th,
+    .table-custom td {
+        padding: 6px 8px;
+        font-size: 0.7rem;
+    }
+    .dash-section .tab-btn {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+    }
+    .dash-section h2 {
+        font-size: 1.25rem !important;
+    }
+    .stat-card {
+        padding: 14px;
+    }
+    .settings-card {
+        padding: 16px;
+    }
+    .modal-dialog {
+        margin: 8px;
+    }
+    .modal-lg {
+        max-width: 100% !important;
+    }
+    #filterDesde,
+    #filterHasta {
+        max-width: 100% !important;
+    }
+    .btn-outline-secondary-custom {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+    }
+    .pagination-info {
+        font-size: 0.65rem;
+    }
+    .stat-box .num {
+        font-size: 1.2rem;
+    }
+    .max-w-450,
+    .max-w-600 {
+        max-width: 100% !important;
+    }
+    .hero-section h1 {
+        font-size: 1.8rem !important;
+    }
+    .code-digit {
+        width: 32px !important;
+        height: 38px !important;
+        font-size: 1rem !important;
+    }
+    .code-input-group {
+        gap: 4px !important;
+    }
+    .login-card {
+        padding: 20px !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .tab-btn {
+        font-size: 0.65rem !important;
+        padding: 4px 8px !important;
+    }
+    .discord-float {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+        bottom: 12px;
+        right: 12px;
+    }
+    .code-digit {
+        width: 28px !important;
+        height: 34px !important;
+        font-size: 0.85rem !important;
+    }
+    .code-input-group {
+        gap: 3px !important;
+    }
+    .project-img {
+        height: 140px;
+    }
 }

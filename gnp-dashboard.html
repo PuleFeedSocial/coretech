@@ -26,7 +26,7 @@
 
     <section class="dash-section py-4">
         <div class="container py-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                 <div>
                     <div class="font-monospace text-accent mb-1 fs-7">[ GNP_DASHBOARD ]</div>
                     <h2 class="text-white fw-bold mb-0 fs-3">Guardia Nacional Premium</h2>
@@ -38,14 +38,14 @@
 
             <div class="mb-4">
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <input type="text" class="form-control form-control-custom" id="searchUserId" placeholder="Buscar por nombre o ID (búsqueda instantánea)" style="max-width:350px;" oninput="onSearchChange()">
+                    <input type="text" class="form-control form-control-custom" id="searchUserId" placeholder="Buscar por nombre o ID" style="max-width:350px;" oninput="onSearchChange()">
                     <input type="date" class="form-control form-control-custom" id="filterDesde" style="max-width:180px;" onchange="onSearchChange()">
                     <input type="date" class="form-control form-control-custom" id="filterHasta" style="max-width:180px;" onchange="onSearchChange()">
                     <button class="btn btn-outline-secondary-custom px-3 py-1 text-white" onclick="limpiarFiltros()">Limpiar</button>
                 </div>
             </div>
 
-            <div class="mb-3 d-flex gap-2 border-bottom border-secondary-custom pb-2">
+            <div class="mb-3 d-flex flex-wrap gap-2 border-bottom border-secondary-custom pb-2">
                 <button class="tab-btn active" onclick="switchTab('cuarteles', this)">🏛️ Cuarteles</button>
                 <button class="tab-btn" onclick="switchTab('asistencias', this)">📝 Asistencias</button>
                 <button class="tab-btn" onclick="switchTab('h50', this)">⏱️ H50</button>
@@ -65,7 +65,7 @@
                         <tbody id="asistenciasBody"><tr><td colspan="7" class="text-center text-muted-custom font-monospace">Selecciona un filtro y presiona Filtrar</td></tr></tbody>
                     </table>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
                     <span class="pagination-info font-monospace" id="asistenciasInfo"></span>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('asistencias', -1)">◀ Anterior</button>
@@ -81,12 +81,25 @@
                         <tbody id="h50Body"><tr><td colspan="7" class="text-center text-muted-custom font-monospace">Sin resultados</td></tr></tbody>
                     </table>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
                     <span class="pagination-info font-monospace" id="h50Info"></span>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('h50', -1)">◀ Anterior</button>
                         <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('h50', 1)">Siguiente ▶</button>
                     </div>
+                </div>
+            </div>
+
+            <div class="tab-content-custom" id="tabAusencias">
+                <div class="d-flex justify-content-end mb-3" id="ausenciasActions"></div>
+                <div class="d-flex align-items-center gap-3 mb-3 fs-7">
+                    <label class="form-check-label"><input type="checkbox" class="checkbox-custom" id="ausenciasActivas" checked onchange="cargarAusencias()"> Solo activas</label>
+                </div>
+                <div class="table-responsive table-responsive-custom">
+                    <table class="table table-custom mb-0">
+                        <thead><tr><th>Nombre</th><th>Hasta</th><th>Motivo</th><th id="ausenciasAccionTh" class="d-none">Acción</th></tr></thead>
+                        <tbody id="ausenciasBody"><tr><td colspan="4" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -97,7 +110,7 @@
                         <tbody id="logsBody"><tr><td colspan="5" class="text-center text-muted-custom font-monospace">Cargando...</td></tr></tbody>
                     </table>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
                     <span class="pagination-info font-monospace" id="logsInfo"></span>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary-custom px-3 py-1 text-white fs-7" onclick="cambiarPagina('logs', -1)">◀ Anterior</button>
