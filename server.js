@@ -113,6 +113,8 @@ app.get('/api/seed', async (req, res) => {
   }
 });
 
+app.get('/favicon.ico', (req, res) => res.sendFile(path.resolve(__dirname, 'favicon.svg')));
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor.' });
