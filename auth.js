@@ -19,12 +19,47 @@ function getDashboardUrl() {
   return user.role === 'admin' ? 'dashboard.html' : 'user-dashboard.html';
 }
 
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+  }
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = html.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+}
+
 function updateNavbar() {
   const user = getUser();
   const navList = document.querySelector('.navbar-nav');
   if (!navList) return;
 
   navList.querySelectorAll('.nav-auth-item').forEach(el => el.remove());
+
+  const themeLi = document.createElement('li');
+  themeLi.className = 'nav-item nav-auth-item';
+  const themeBtn = document.createElement('button');
+  themeBtn.id = 'themeToggleBtn';
+  themeBtn.className = 'btn btn-sm border-0 px-3 py-2';
+  themeBtn.style.cssText = 'background:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;transition:opacity .2s;';
+  themeBtn.onmouseover = function () { this.style.opacity = '0.7'; };
+  themeBtn.onmouseout = function () { this.style.opacity = '1'; };
+  themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️';
+  themeBtn.onclick = toggleTheme;
+  themeLi.appendChild(themeBtn);
+  navList.appendChild(themeLi);
 
   if (user) {
     const dropdownLi = document.createElement('li');
@@ -114,6 +149,7 @@ function injectDiscordButton() {
   document.body.appendChild(div);
 }
 
+initTheme();
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => { updateNavbar(); injectDiscordButton(); });
 } else {
