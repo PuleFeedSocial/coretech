@@ -37,7 +37,7 @@ app.use('/api/efectivos', efectivosRoutes);
 
 async function runSeed() {
   const db = await getDb();
-  const existing = await db.get('SELECT id FROM users WHERE role = ?', ['admin']);
+  const existing = await db.get('SELECT id FROM users WHERE email = ?', ['admin@coretech.io']);
   if (existing) return;
 
   const adminEmail = 'admin@coretech.io';
