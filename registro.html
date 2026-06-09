@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>CoreTech Systems - Registro de Bitácoras</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
+        <div class="container">
+            <a class="navbar-brand font-monospace fw-bold text-accent" href="index.html">
+                <span class="text-white">&lt;</span>CORETECH<span class="text-white">_SYSTEMS&gt;</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav text-center pt-3 pt-lg-0">
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="index.html">Agencia</a></li>
+                    <li class="nav-item"><a class="nav-link px-3 py-2" href="soluciones.html">Soluciones</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="form-page py-4">
+        <div class="container py-2">
+            <div class="text-center mb-4" data-aos="fade-up">
+                <div class="font-monospace text-accent mb-1 fs-7">[ BITACORA_PROTOCOL ]</div>
+                <h2 class="fw-bold mb-1">Registro de Bitácoras</h2>
+                <p class="text-muted-custom mx-auto max-w-600 px-3 fs-7">Registrá asistencias, H50 y solicitudes de ausencia.</p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-xl-6 col-lg-8 col-12">
+                    <div class="settings-card p-4" data-aos="fade-up" data-aos-delay="50">
+                        <div class="mb-3">
+                            <label class="form-label-custom font-monospace">DISCORD ID <span class="text-accent">*</span></label>
+                            <input type="text" class="form-control form-control-custom font-monospace" id="discordId" placeholder="Tu ID de Discord (18 dígitos)" inputmode="numeric">
+                            <div class="text-muted-custom fs-7 mt-1">Necesitamos tu ID de Discord para asociar el registro. <a href="#" onclick="event.preventDefault();alert('Hacé click derecho sobre tu nombre en Discord → Copiar ID. Si no ves la opción, activalo en Ajustes → Avanzado → Modo desarrollador.')" class="text-accent">¿Cómo obtenerlo?</a></div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mb-3 border-bottom border-secondary-custom pb-2">
+                            <button class="tab-btn active" onclick="switchTab('asistencia',this)">📝 Asistencia</button>
+                            <button class="tab-btn" onclick="switchTab('h50',this)">⏱️ H50</button>
+                            <button class="tab-btn" onclick="switchTab('ausencia',this)">✈️ Ausencia</button>
+                        </div>
+
+                        <div class="tab-content-custom active" id="tabAsistencia">
+                            <h6 class="section-title mb-3 fs-7">Registrar entrada / salida</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Hora de entrada</label>
+                                    <input type="time" class="form-control form-control-custom" id="asisEntrada">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Hora de salida</label>
+                                    <input type="time" class="form-control form-control-custom" id="asisSalida">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Cuartel</label>
+                                    <input type="text" class="form-control form-control-custom" id="asisCuartel" placeholder="ej: alpha">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Fecha</label>
+                                    <input type="date" class="form-control form-control-custom" id="asisFecha">
+                                </div>
+                            </div>
+                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAsistencia()">📝 Registrar Asistencia</button>
+                            <div id="asisResult" class="mt-2"></div>
+                        </div>
+
+                        <div class="tab-content-custom" id="tabH50">
+                            <h6 class="section-title mb-3 fs-7">Registrar horas H50</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Minutos <span class="text-accent">*</span></label>
+                                    <input type="number" class="form-control form-control-custom" id="h50Minutos" placeholder="ej: 60" min="1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Emisor</label>
+                                    <input type="text" class="form-control form-control-custom" id="h50Emisor" placeholder="Quién lo otorgó">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Relegado</label>
+                                    <input type="text" class="form-control form-control-custom" id="h50Relegado" placeholder="Si aplica">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Fecha</label>
+                                    <input type="date" class="form-control form-control-custom" id="h50Fecha">
+                                </div>
+                            </div>
+                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarH50()">⏱️ Registrar H50</button>
+                            <div id="h50Result" class="mt-2"></div>
+                        </div>
+
+                        <div class="tab-content-custom" id="tabAusencia">
+                            <h6 class="section-title mb-3 fs-7">Solicitar ausencia / licencia</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Fecha de regreso <span class="text-accent">*</span></label>
+                                    <input type="date" class="form-control form-control-custom" id="ausFechaFin">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Motivo</label>
+                                    <input type="text" class="form-control form-control-custom" id="ausMotivo" placeholder="ej: Licencia médica">
+                                </div>
+                            </div>
+                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAusencia()">✈️ Solicitar Ausencia</button>
+                            <div id="ausResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-4 bg-dark-custom border-top border-secondary-custom font-monospace text-center text-white-50 fs-7 px-3">
+        <div class="container">&copy; 2026 CoreTech Systems. All rights reserved.</div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="auth.js"></script>
+    <script>AOS.init({ once: true, duration: 600, easing: 'ease-out-cubic' });</script>
+    <script>
+        const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('#registroTabs .tab-content-custom').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function getDiscordId() {
+            const id = document.getElementById('discordId').value.trim();
+            if (!id) { alert('Debés ingresar tu Discord ID.'); return null; }
+            if (!/^\d{17,19}$/.test(id)) { alert('El Discord ID debe ser numérico de 17 a 19 dígitos.'); return null; }
+            return id;
+        }
+
+        async function registrarAsistencia() {
+            const discordId = getDiscordId(); if (!discordId) return;
+            const body = { discordId, horaEntrada: document.getElementById('asisEntrada').value, horaSalida: document.getElementById('asisSalida').value, cuartel: document.getElementById('asisCuartel').value, fecha: document.getElementById('asisFecha').value || undefined };
+            const res = await fetch(API + '/api/gnp/user/asistencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            document.getElementById('asisResult').innerHTML = res.ok ? '<div class="alert-custom p-2 text-center font-monospace fs-7">✅ ' + data.message + '</div>' : '<div class="text-danger font-monospace fs-7 text-center p-2">❌ ' + (data.error || 'Error') + '</div>';
+        }
+
+        async function registrarH50() {
+            const discordId = getDiscordId(); if (!discordId) return;
+            const minutos = document.getElementById('h50Minutos').value;
+            if (!minutos || parseInt(minutos) < 1) { alert('Ingresá los minutos.'); return; }
+            const body = { discordId, minutos, emisor: document.getElementById('h50Emisor').value, relegado: document.getElementById('h50Relegado').value, fecha: document.getElementById('h50Fecha').value || undefined };
+            const res = await fetch(API + '/api/gnp/user/h50', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            document.getElementById('h50Result').innerHTML = res.ok ? '<div class="alert-custom p-2 text-center font-monospace fs-7">✅ ' + data.message + '</div>' : '<div class="text-danger font-monospace fs-7 text-center p-2">❌ ' + (data.error || 'Error') + '</div>';
+        }
+
+        async function registrarAusencia() {
+            const discordId = getDiscordId(); if (!discordId) return;
+            const fechaFin = document.getElementById('ausFechaFin').value;
+            if (!fechaFin) { alert('Seleccioná la fecha de regreso.'); return; }
+            const body = { discordId, fechaFin, motivo: document.getElementById('ausMotivo').value };
+            const res = await fetch(API + '/api/gnp/user/ausencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            document.getElementById('ausResult').innerHTML = res.ok ? '<div class="alert-custom p-2 text-center font-monospace fs-7">✅ ' + data.message + '</div>' : '<div class="text-danger font-monospace fs-7 text-center p-2">❌ ' + (data.error || 'Error') + '</div>';
+        }
+
+        document.getElementById('asisFecha').valueAsDate = new Date();
+        document.getElementById('h50Fecha').valueAsDate = new Date();
+        document.getElementById('ausFechaFin').valueAsDate = new Date(Date.now() + 86400000);
+    </script>
+</body>
+</html>
