@@ -153,6 +153,75 @@ router.get('/diagnostico', async (req, res) => {
   }
 });
 
+// ---- Endpoints públicos para registro de bitácoras (sin auth) ----
+
+async function cuartelDeUserId(userId) {
+  const docs = await DataGNP.find({});
+  for (const d of docs) {
+    if (d.key !== 'config' && Array.isArray(d.valor) && d.valor.includes(userId)) return d.key;
+  }
+  return null;
+}
+
+router.get('/user/verificar/:discordId', async (req, res) => {
+  try {
+    await conectar().catch(() => {});
+    const { discordId } = req.params;
+    const cuartel = await cuartelDeUserId(discordId);
+    let displayName = null;
+    try {
+      const cached = await DiscordUser.findOne({ userId: discordId });
+      if (cached) displayName = cached.globalName;
+    } catch {}
+    res.json({ encontrado: !!cuartel, cuartel: cuartel ? cuartel.toUpperCase() : null, displayName });
+  } catch (e) { res.json({ encontrado: false, cuartel: null, error: e.message }); }
+});
+
+router.post('/user/asistencia', async (req, res) => {
+  try {
+    const { discordId, horaEntrada, horaSalida, fecha } = req.body;
+    if (!discordId) return res.status(400).json({ error: 'discordId requerido' });
+    const cuartel = await cuartelDeUserId(discordId);
+    if (!cuartel) return res.status(400).json({ error: 'Tu Discord ID no está asignado a ningún cuartel.' });
+    const doc = await AsistenciaGNP.create({
+      userId: discordId, horaEntrada: horaEntrada || '', horaSalida: horaSalida || '',
+      cuartel, fechaString: fecha || new Date().toISOString().split('T')[0],
+      h50Momento: '', timestamp: new Date()
+    });
+    res.json({ message: 'Asistencia registrada en ' + cuartel.toUpperCase(), id: doc._id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/user/h50', async (req, res) => {
+  try {
+    const { discordId, minutos, emisor, relegado, fecha } = req.body;
+    if (!discordId || !minutos) return res.status(400).json({ error: 'discordId y minutos requeridos' });
+    const cuartel = await cuartelDeUserId(discordId);
+    if (!cuartel) return res.status(400).json({ error: 'Tu Discord ID no está asignado a ningún cuartel.' });
+    const doc = await H50GNP.create({
+      userId: discordId, minutos: parseInt(minutos), emisor: emisor || '',
+      relegado: relegado || '', fechaString: fecha || new Date().toISOString().split('T')[0],
+      cuartel, timestamp: new Date()
+    });
+    res.json({ message: 'H50 registrado en ' + cuartel.toUpperCase(), id: doc._id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/user/ausencia', async (req, res) => {
+  try {
+    const { discordId, fechaFin, motivo } = req.body;
+    if (!discordId || !fechaFin) return res.status(400).json({ error: 'discordId y fechaFin requeridos' });
+    const cuartel = await cuartelDeUserId(discordId);
+    if (!cuartel) return res.status(400).json({ error: 'Tu Discord ID no está asignado a ningún cuartel.' });
+    await AusenciaGNP.updateOne(
+      { userId: discordId },
+      { $set: { userId: discordId, fechaFin: new Date(fechaFin), motivo: motivo || '' } },
+      { upsert: true }
+    );
+    res.json({ message: 'Ausencia registrada en ' + cuartel.toUpperCase() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 router.use(authenticate);
 router.use(async (req, res, next) => {
   const acceso = await tieneAcceso(req.user.id);
@@ -476,47 +545,6 @@ router.delete('/ausencias/:userId', adminOnly, async (req, res) => {
   if (!doc) return res.status(404).json({ error: 'Ausencia no encontrada' });
   log('ausencia', 'eliminar', `Ausencia de userId:${req.params.userId} eliminada`, req.user.id);
   res.json({ message: 'Ausencia eliminada' });
-});
-
-// ---- Registro de usuarios (bitácoras) ----
-
-router.post('/user/asistencia', async (req, res) => {
-  try {
-    const { discordId, horaEntrada, horaSalida, cuartel, fecha } = req.body;
-    if (!discordId) return res.status(400).json({ error: 'discordId requerido' });
-    const doc = await AsistenciaGNP.create({
-      userId: discordId, horaEntrada: horaEntrada || '', horaSalida: horaSalida || '',
-      cuartel: (cuartel || '').toLowerCase(), fechaString: fecha || new Date().toISOString().split('T')[0],
-      h50Momento: '', timestamp: new Date()
-    });
-    res.json({ message: 'Asistencia registrada', id: doc._id });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.post('/user/h50', async (req, res) => {
-  try {
-    const { discordId, minutos, emisor, relegado, fecha } = req.body;
-    if (!discordId || !minutos) return res.status(400).json({ error: 'discordId y minutos requeridos' });
-    const doc = await H50GNP.create({
-      userId: discordId, minutos: parseInt(minutos), emisor: emisor || '',
-      relegado: relegado || '', fechaString: fecha || new Date().toISOString().split('T')[0],
-      cuartel: '', timestamp: new Date()
-    });
-    res.json({ message: 'H50 registrado', id: doc._id });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.post('/user/ausencia', async (req, res) => {
-  try {
-    const { discordId, fechaFin, motivo } = req.body;
-    if (!discordId || !fechaFin) return res.status(400).json({ error: 'discordId y fechaFin requeridos' });
-    await AusenciaGNP.updateOne(
-      { userId: discordId },
-      { $set: { userId: discordId, fechaFin: new Date(fechaFin), motivo: motivo || '' } },
-      { upsert: true }
-    );
-    res.json({ message: 'Ausencia registrada' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ---- CRUD: Perfiles (admin) ----

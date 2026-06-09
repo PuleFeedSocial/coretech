@@ -9,6 +9,25 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .verificado-badge {
+            background: rgba(25, 135, 84, 0.15);
+            border: 1px solid #198754;
+            border-radius: 8px;
+            padding: 10px 14px;
+            transition: all .3s;
+        }
+        .no-verificado-badge {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .tab-btn:disabled, .btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom sticky-top border-bottom border-secondary-custom py-3">
@@ -41,78 +60,89 @@
                     <div class="settings-card p-4" data-aos="fade-up" data-aos-delay="50">
                         <div class="mb-3">
                             <label class="form-label-custom font-monospace">DISCORD ID <span class="text-accent">*</span></label>
-                            <input type="text" class="form-control form-control-custom font-monospace" id="discordId" placeholder="Tu ID de Discord (18 dígitos)" inputmode="numeric">
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control form-control-custom font-monospace flex-grow-1" id="discordId" placeholder="Tu ID de Discord (18 dígitos)" inputmode="numeric" style="min-width:0">
+                                <button class="btn btn-accent text-white fw-bold px-3 flex-shrink-0" id="btnVerificar" onclick="verificarDiscordId()">Verificar</button>
+                            </div>
                             <div class="text-muted-custom fs-7 mt-1">Necesitamos tu ID de Discord para asociar el registro. <a href="#" onclick="event.preventDefault();alert('Hacé click derecho sobre tu nombre en Discord → Copiar ID. Si no ves la opción, activalo en Ajustes → Avanzado → Modo desarrollador.')" class="text-accent">¿Cómo obtenerlo?</a></div>
+                            <div id="verificacionResult" class="mt-2"></div>
                         </div>
 
-                        <div class="d-flex flex-wrap gap-2 mb-3 border-bottom border-secondary-custom pb-2">
-                            <button class="tab-btn active" onclick="switchTab('asistencia',this)">📝 Asistencia</button>
-                            <button class="tab-btn" onclick="switchTab('h50',this)">⏱️ H50</button>
-                            <button class="tab-btn" onclick="switchTab('ausencia',this)">✈️ Ausencia</button>
-                        </div>
-
-                        <div class="tab-content-custom active" id="tabAsistencia">
-                            <h6 class="section-title mb-3 fs-7">Registrar entrada / salida</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Hora de entrada</label>
-                                    <input type="time" class="form-control form-control-custom" id="asisEntrada">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Hora de salida</label>
-                                    <input type="time" class="form-control form-control-custom" id="asisSalida">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Cuartel</label>
-                                    <input type="text" class="form-control form-control-custom" id="asisCuartel" placeholder="ej: alpha">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Fecha</label>
-                                    <input type="date" class="form-control form-control-custom" id="asisFecha">
-                                </div>
+                        <div id="formulariosBloqueados">
+                            <div class="d-flex flex-wrap gap-2 mb-3 border-bottom border-secondary-custom pb-2">
+                                <button class="tab-btn active" disabled>📝 Asistencia</button>
+                                <button class="tab-btn" disabled>⏱️ H50</button>
+                                <button class="tab-btn" disabled>✈️ Ausencia</button>
                             </div>
-                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAsistencia()">📝 Registrar Asistencia</button>
-                            <div id="asisResult" class="mt-2"></div>
+                            <p class="text-muted-custom text-center fs-7 py-3 mb-0">Verificá tu Discord ID para habilitar los formularios.</p>
                         </div>
 
-                        <div class="tab-content-custom" id="tabH50">
-                            <h6 class="section-title mb-3 fs-7">Registrar horas H50</h6>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label-custom">Minutos <span class="text-accent">*</span></label>
-                                    <input type="number" class="form-control form-control-custom" id="h50Minutos" placeholder="ej: 60" min="1">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label-custom">Emisor</label>
-                                    <input type="text" class="form-control form-control-custom" id="h50Emisor" placeholder="Quién lo otorgó">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label-custom">Relegado</label>
-                                    <input type="text" class="form-control form-control-custom" id="h50Relegado" placeholder="Si aplica">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Fecha</label>
-                                    <input type="date" class="form-control form-control-custom" id="h50Fecha">
-                                </div>
+                        <div id="formulariosHabilitados" style="display:none">
+                            <div class="d-flex flex-wrap gap-2 mb-3 border-bottom border-secondary-custom pb-2">
+                                <button class="tab-btn active" onclick="switchTab('asistencia',this)">📝 Asistencia</button>
+                                <button class="tab-btn" onclick="switchTab('h50',this)">⏱️ H50</button>
+                                <button class="tab-btn" onclick="switchTab('ausencia',this)">✈️ Ausencia</button>
                             </div>
-                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarH50()">⏱️ Registrar H50</button>
-                            <div id="h50Result" class="mt-2"></div>
-                        </div>
 
-                        <div class="tab-content-custom" id="tabAusencia">
-                            <h6 class="section-title mb-3 fs-7">Solicitar ausencia / licencia</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Fecha de regreso <span class="text-accent">*</span></label>
-                                    <input type="date" class="form-control form-control-custom" id="ausFechaFin">
+                            <div class="tab-content-custom active" id="tabAsistencia">
+                                <h6 class="section-title mb-3 fs-7">Registrar entrada / salida</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Hora de entrada</label>
+                                        <input type="time" class="form-control form-control-custom" id="asisEntrada">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Hora de salida</label>
+                                        <input type="time" class="form-control form-control-custom" id="asisSalida">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Fecha</label>
+                                        <input type="date" class="form-control form-control-custom" id="asisFecha">
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-custom">Motivo</label>
-                                    <input type="text" class="form-control form-control-custom" id="ausMotivo" placeholder="ej: Licencia médica">
-                                </div>
+                                <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAsistencia()">📝 Registrar Asistencia</button>
+                                <div id="asisResult" class="mt-2"></div>
                             </div>
-                            <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAusencia()">✈️ Solicitar Ausencia</button>
-                            <div id="ausResult" class="mt-2"></div>
+
+                            <div class="tab-content-custom" id="tabH50">
+                                <h6 class="section-title mb-3 fs-7">Registrar horas H50</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label-custom">Minutos <span class="text-accent">*</span></label>
+                                        <input type="number" class="form-control form-control-custom" id="h50Minutos" placeholder="ej: 60" min="1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label-custom">Emisor</label>
+                                        <input type="text" class="form-control form-control-custom" id="h50Emisor" placeholder="Quién lo otorgó">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label-custom">Relegado</label>
+                                        <input type="text" class="form-control form-control-custom" id="h50Relegado" placeholder="Si aplica">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Fecha</label>
+                                        <input type="date" class="form-control form-control-custom" id="h50Fecha">
+                                    </div>
+                                </div>
+                                <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarH50()">⏱️ Registrar H50</button>
+                                <div id="h50Result" class="mt-2"></div>
+                            </div>
+
+                            <div class="tab-content-custom" id="tabAusencia">
+                                <h6 class="section-title mb-3 fs-7">Solicitar ausencia / licencia</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Fecha de regreso <span class="text-accent">*</span></label>
+                                        <input type="date" class="form-control form-control-custom" id="ausFechaFin">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-custom">Motivo</label>
+                                        <input type="text" class="form-control form-control-custom" id="ausMotivo" placeholder="ej: Licencia médica">
+                                    </div>
+                                </div>
+                                <button class="btn btn-accent w-100 mt-3 py-2 fw-bold text-white" onclick="registrarAusencia()">✈️ Solicitar Ausencia</button>
+                                <div id="ausResult" class="mt-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -130,24 +160,58 @@
     <script>AOS.init({ once: true, duration: 600, easing: 'ease-out-cubic' });</script>
     <script>
         const API = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+        let discordVerificado = null;
 
         function switchTab(tab, btn) {
-            document.querySelectorAll('.tab-content-custom').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#formulariosHabilitados .tab-content-custom').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#formulariosHabilitados .tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
             btn.classList.add('active');
         }
 
-        function getDiscordId() {
+        async function verificarDiscordId() {
             const id = document.getElementById('discordId').value.trim();
-            if (!id) { alert('Debés ingresar tu Discord ID.'); return null; }
-            if (!/^\d{17,19}$/.test(id)) { alert('El Discord ID debe ser numérico de 17 a 19 dígitos.'); return null; }
-            return id;
+            if (!id) { mostrarVerificacion('error', 'Ingresá tu Discord ID.'); return; }
+            if (!/^\d{17,19}$/.test(id)) { mostrarVerificacion('error', 'El Discord ID debe ser numérico de 17 a 19 dígitos.'); return; }
+            document.getElementById('btnVerificar').disabled = true;
+            document.getElementById('btnVerificar').textContent = 'Verificando...';
+            try {
+                const res = await fetch(API + '/api/gnp/user/verificar/' + id);
+                const data = await res.json();
+                if (data.encontrado && data.cuartel) {
+                    discordVerificado = id;
+                    mostrarVerificacion('ok', '✅ Verificado — <strong>' + (data.displayName || 'Usuario') + '</strong> — Cuartel <strong>' + data.cuartel.toUpperCase() + '</strong>');
+                    document.getElementById('formulariosBloqueados').style.display = 'none';
+                    document.getElementById('formulariosHabilitados').style.display = 'block';
+                } else {
+                    discordVerificado = null;
+                    mostrarVerificacion('no', '❌ Este Discord ID no está asignado a ningún cuartel. No podés registrar bitácoras.');
+                    document.getElementById('formulariosBloqueados').style.display = 'block';
+                    document.getElementById('formulariosHabilitados').style.display = 'none';
+                }
+            } catch (e) {
+                discordVerificado = null;
+                mostrarVerificacion('error', '⚠️ Error de conexión: ' + e.message);
+            }
+            document.getElementById('btnVerificar').disabled = false;
+            document.getElementById('btnVerificar').textContent = 'Verificar';
+        }
+
+        function mostrarVerificacion(tipo, html) {
+            const el = document.getElementById('verificacionResult');
+            if (tipo === 'ok') el.innerHTML = '<div class="verificado-badge font-monospace fs-7">' + html + '</div>';
+            else if (tipo === 'no') el.innerHTML = '<div class="no-verificado-badge font-monospace fs-7">' + html + '</div>';
+            else el.innerHTML = '<div class="no-verificado-badge font-monospace fs-7">' + html + '</div>';
+        }
+
+        function getDiscordId() {
+            if (!discordVerificado) { alert('Primero verificá tu Discord ID.'); return null; }
+            return discordVerificado;
         }
 
         async function registrarAsistencia() {
             const discordId = getDiscordId(); if (!discordId) return;
-            const body = { discordId, horaEntrada: document.getElementById('asisEntrada').value, horaSalida: document.getElementById('asisSalida').value, cuartel: document.getElementById('asisCuartel').value, fecha: document.getElementById('asisFecha').value || undefined };
+            const body = { discordId, horaEntrada: document.getElementById('asisEntrada').value, horaSalida: document.getElementById('asisSalida').value, fecha: document.getElementById('asisFecha').value || undefined };
             const res = await fetch(API + '/api/gnp/user/asistencia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             const data = await res.json();
             document.getElementById('asisResult').innerHTML = res.ok ? '<div class="alert-custom p-2 text-center font-monospace fs-7">✅ ' + data.message + '</div>' : '<div class="text-danger font-monospace fs-7 text-center p-2">❌ ' + (data.error || 'Error') + '</div>';
