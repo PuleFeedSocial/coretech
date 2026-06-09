@@ -547,6 +547,23 @@ router.delete('/ausencias/:userId', adminOnly, async (req, res) => {
   res.json({ message: 'Ausencia eliminada' });
 });
 
+// ---- Ascender (admin) ----
+
+router.post('/ascender/:userId', adminOnly, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const asisDel = await AsistenciaGNP.deleteMany({ userId });
+    const h50Del = await H50GNP.deleteMany({ userId });
+    await PerfilGNP.updateOne(
+      { userId },
+      { $set: { ultimoAscenso: new Date() } },
+      { upsert: true }
+    );
+    log('ascenso', 'ascender', `Usuario ${userId} ascendido — ${asisDel.deletedCount} asistencias y ${h50Del.deletedCount} H50 eliminados`, req.user.id);
+    res.json({ message: `Ascenso completado: ${asisDel.deletedCount} asistencias y ${h50Del.deletedCount} H50 eliminados. Ausencias conservadas.` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ---- CRUD: Perfiles (admin) ----
 
 router.put('/perfiles/:userId', adminOnly, async (req, res) => {
