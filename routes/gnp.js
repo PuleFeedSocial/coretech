@@ -105,6 +105,7 @@ async function tieneAcceso(userId) {
 
 async function log(tipo, accion, descripcion, autor) {
   try {
+    await conectar().catch(() => {});
     await LogGNP.create({ tipo, accion, descripcion, autor: autor || 'sistema' });
   } catch (e) {
     console.log('[GNP] Error al guardar log:', e.message);
@@ -188,6 +189,7 @@ router.post('/user/asistencia', async (req, res) => {
       cuartel, fechaString: fecha || new Date().toISOString().split('T')[0],
       h50Momento: '', timestamp: new Date()
     });
+    log('asistencia', 'crear', `Asistencia registrada por usuario (Discord:${discordId}) en ${cuartel.toUpperCase()}`, discordId);
     res.json({ message: 'Asistencia registrada en ' + cuartel.toUpperCase(), id: doc._id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -203,6 +205,7 @@ router.post('/user/h50', async (req, res) => {
       relegado: relegado || '', fechaString: fecha || new Date().toISOString().split('T')[0],
       cuartel, timestamp: new Date()
     });
+    log('h50', 'crear', `H50 registrado por usuario (Discord:${discordId}) — ${minutos} minutos en ${cuartel.toUpperCase()}`, discordId);
     res.json({ message: 'H50 registrado en ' + cuartel.toUpperCase(), id: doc._id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -218,6 +221,7 @@ router.post('/user/ausencia', async (req, res) => {
       { $set: { userId: discordId, fechaFin: new Date(fechaFin), motivo: motivo || '' } },
       { upsert: true }
     );
+    log('ausencia', 'crear', `Ausencia registrada por usuario (Discord:${discordId}) hasta ${fechaFin} — ${motivo || 'sin motivo'}`, discordId);
     res.json({ message: 'Ausencia registrada en ' + cuartel.toUpperCase() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
