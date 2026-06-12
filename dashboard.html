@@ -477,11 +477,10 @@
         async function manageUserProjects(id, name) {
             managingUserId = id;
             document.getElementById('modalUserTitle').textContent = 'Proyectos de ' + name;
-            var modal = bootstrap.Modal.getInstance(document.getElementById('userProjectsModal'));
-            if (!modal) {
-                modal = new bootstrap.Modal(document.getElementById('userProjectsModal'));
-                modal.show();
-            }
+            const modalEl = document.getElementById('userProjectsModal');
+            let modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) modal = new bootstrap.Modal(modalEl);
+            modal.show();
             loadUserProjectsContent(id);
         }
 
